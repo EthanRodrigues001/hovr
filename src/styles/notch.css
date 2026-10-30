@@ -624,7 +624,7 @@ kbd {
 }
 .seg.on {
   background: var(--brand-soft);
-  box-shadow: inset 0 0 0 1px rgba(139, 143, 255, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.4);
   color: #fff;
 }
 
