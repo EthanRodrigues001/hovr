@@ -10,15 +10,17 @@ interface Props {
   id: ProviderId
   remaining: number | null
   size?: number
+  /** Always draw the progress ring, even at sizes that would normally show the logo. */
+  ring?: boolean
 }
 
-export function ProviderRing({ id, remaining, size = 18 }: Props) {
+export function ProviderRing({ id, remaining, size = 18, ring: forceRing = false }: Props) {
   const { accent } = PROVIDER_META[id]
   const stroke = Math.max(2, size * 0.15)
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
   const frac = remaining === null ? 0 : Math.max(0, Math.min(1, remaining / 100))
-  const withLogo = size >= 20
+  const withLogo = size >= 20 && !forceRing
   const ring = (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="ring" aria-hidden>
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth={stroke} />

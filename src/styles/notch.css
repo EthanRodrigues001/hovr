@@ -802,3 +802,22 @@ kbd {
 .prow-missing:hover {
   opacity: 0.85;
 }
+
+
+/* compact pill: the number lives inside the ring */
+.ring-num-wrap {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+}
+.ring-num-wrap .ring {
+  grid-area: 1 / 1;
+}
+.ring-num {
+  grid-area: 1 / 1;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.92);
+  font-variant-numeric: tabular-nums;
+}

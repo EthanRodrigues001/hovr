@@ -58,7 +58,7 @@ function sampleState(now = Date.now()): UsageState {
 if (import.meta.env.DEV && params.get('mock')) {
   const none = () => () => undefined
   const edge: EdgeApi = {
-    loadState: async () => ({ settings: { ...DEFAULT_SETTINGS }, version: 'dev' }),
+    loadState: async () => ({ settings: { ...DEFAULT_SETTINGS, ...(params.get('compact') ? { collapsedStyle: 'compact' as const } : {}) }, version: 'dev' }),
     installUpdate: async () => undefined,
     quitApp: async () => undefined,
     updateSettings: async (patch) => ({ ...DEFAULT_SETTINGS, ...patch }),

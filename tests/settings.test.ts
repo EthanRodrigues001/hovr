@@ -29,6 +29,11 @@ describe('sanitize', () => {
     expect(out.disabledProviders).toEqual([])
   })
 
+  it('maps the old "dots" pill style to "compact"', () => {
+    expect(sanitize(base, { collapsedStyle: 'dots' as never }).collapsedStyle).toBe('compact')
+    expect(sanitize(base, { collapsedStyle: 'compact' }).collapsedStyle).toBe('compact')
+  })
+
   it('clamps and rounds the refresh interval', () => {
     expect(sanitize(base, { usageRefreshMinutes: 0 }).usageRefreshMinutes).toBe(1)
     expect(sanitize(base, { usageRefreshMinutes: 500 }).usageRefreshMinutes).toBe(60)
@@ -37,9 +42,9 @@ describe('sanitize', () => {
   })
 
   it('a patch layers over the current settings without resetting the rest', () => {
-    const current = sanitize(base, { collapsedStyle: 'dots', usageRefreshMinutes: 15 })
+    const current = sanitize(base, { collapsedStyle: 'compact', usageRefreshMinutes: 15 })
     const next = sanitize(current, { reduceMotion: true })
-    expect(next).toMatchObject({ collapsedStyle: 'dots', usageRefreshMinutes: 15, reduceMotion: true })
+    expect(next).toMatchObject({ collapsedStyle: 'compact', usageRefreshMinutes: 15, reduceMotion: true })
   })
 
   it('an explicit undefined display clears the saved fingerprint; a bad one is rejected', () => {

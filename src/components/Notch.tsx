@@ -13,7 +13,7 @@ import { NOTCH } from '../../shared/notch'
 import { worstRemainingPercent } from '../../shared/usageMath'
 import type { ProviderStatus } from '../../shared/usage'
 import { closeNotch, registerNotchElement } from '../hooks/useNotchHover'
-import { PROVIDER_META, remainingTone } from '../lib/providers'
+import { remainingTone } from '../lib/providers'
 import { useStore } from '../store/appStore'
 import { Logo } from './Logo'
 import { ProviderRing } from './ProviderRing'
@@ -57,7 +57,7 @@ function useChips(): Chip[] {
   }, [providers, usage, pillShow])
 }
 
-function CollapsedPill({ chips, style }: { chips: Chip[]; style: 'chips' | 'dots' }) {
+function CollapsedPill({ chips, style }: { chips: Chip[]; style: 'chips' | 'compact' }) {
   const loaded = useStore((s) => s.providers.length > 0)
   if (chips.length === 0) {
     return (
@@ -75,11 +75,17 @@ function CollapsedPill({ chips, style }: { chips: Chip[]; style: 'chips' | 'dots
         const tone = remaining === null ? 'low' : remainingTone(remaining)
         return (
           <span className="chip" key={status.id} title={`${status.label}: ${remaining === null ? 'unavailable' : `${remaining}% left`}`}>
-            <ProviderRing id={status.id} remaining={remaining} size={18} />
-            {style === 'chips' && (
-              <span className={`chip-pct ${tone === 'critical' ? 'tone-critical' : ''}`}>{remaining === null ? '?' : `${remaining}%`}</span>
+            {style === 'chips' ? (
+              <>
+                <ProviderRing id={status.id} remaining={remaining} size={18} ring />
+                <span className={`chip-pct ${tone === 'critical' ? 'tone-critical' : ''}`}>{remaining === null ? '?' : `${remaining}%`}</span>
+              </>
+            ) : (
+              <span className="ring-num-wrap">
+                <ProviderRing id={status.id} remaining={remaining} size={26} ring />
+                <span className={`ring-num ${tone === 'critical' ? 'tone-critical' : ''}`}>{remaining === null ? '?' : remaining}</span>
+              </span>
             )}
-            {style === 'dots' && <span className="dot" style={{ background: PROVIDER_META[status.id].accent }} />}
           </span>
         )
       })}
@@ -88,9 +94,9 @@ function CollapsedPill({ chips, style }: { chips: Chip[]; style: 'chips' | 'dots
   )
 }
 
-function collapsedWidthFor(count: number, style: 'chips' | 'dots', loaded: boolean): number {
+function collapsedWidthFor(count: number, style: 'chips' | 'compact', loaded: boolean): number {
   if (count === 0) return loaded ? 168 : 110
-  const per = style === 'chips' ? 62 : 38
+  const per = style === 'chips' ? 62 : 34
   return Math.min(NOTCH.collapsedWidth + 40, 28 + Math.min(count, MAX_CHIPS) * per + (count > MAX_CHIPS ? 26 : 0))
 }
 

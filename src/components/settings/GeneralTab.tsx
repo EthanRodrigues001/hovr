@@ -30,13 +30,13 @@ export function GeneralTab() {
       </div>
 
       <h3 className="sgroup">Notch</h3>
-      <Row title="Collapsed notch" hint="What the small pill shows before you hover it.">
+      <Row title="Collapsed notch" hint="Percentages beside each ring, or just the number inside it.">
         <Segmented<CollapsedStyle>
           value={settings.collapsedStyle}
           onChange={(collapsedStyle) => void patch({ collapsedStyle })}
           options={[
             { value: 'chips', label: 'Percentages' },
-            { value: 'dots', label: 'Dots' }
+            { value: 'compact', label: 'Compact' }
           ]}
         />
       </Row>

@@ -16,7 +16,7 @@ export interface DisplayInfo {
 
 /** What the collapsed notch shows. */
 export type PillShow = 'all' | 'tightest'
-export type CollapsedStyle = 'chips' | 'dots'
+export type CollapsedStyle = 'chips' | 'compact'
 
 export interface Settings {
   /** Start with Windows. */

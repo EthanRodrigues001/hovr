@@ -5,7 +5,7 @@
  */
 import type { CollapsedStyle, PillShow, Settings } from './types'
 
-const COLLAPSED_STYLES: readonly CollapsedStyle[] = ['chips', 'dots']
+const COLLAPSED_STYLES: readonly CollapsedStyle[] = ['chips', 'compact']
 
 function isRect(v: unknown): v is NonNullable<Settings['stickDisplayWorkArea']> {
   if (typeof v !== 'object' || v === null) return false
@@ -24,7 +24,11 @@ export function sanitize(base: Settings, input: Partial<Record<keyof Settings, u
     launchAtLogin: pick('launchAtLogin', bool),
     reduceMotion: pick('reduceMotion', bool),
     suppressInFullscreen: pick('suppressInFullscreen', bool),
-    collapsedStyle: pick('collapsedStyle', (v) => COLLAPSED_STYLES.includes(v as CollapsedStyle)),
+    // The old "dots" style became "compact".
+    collapsedStyle:
+      'collapsedStyle' in input && input.collapsedStyle === 'dots'
+        ? 'compact'
+        : pick('collapsedStyle', (v) => COLLAPSED_STYLES.includes(v as CollapsedStyle)),
     stickDisplayId: 'stickDisplayId' in input && !num(input.stickDisplayId) ? undefined : pick('stickDisplayId', num),
     stickDisplayWorkArea:
       'stickDisplayWorkArea' in input && !isRect(input.stickDisplayWorkArea)
