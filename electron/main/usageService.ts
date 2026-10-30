@@ -12,6 +12,8 @@ import { resolveAfterProbe } from '../../shared/usageMath'
 import { loadSettings } from '../store/settings'
 import { pushState } from './state'
 import { DRIVERS } from './providers/registry'
+import { checkAlerts } from './alerts'
+import { recordSamples } from './usageSamples'
 
 const usage: Partial<Record<ProviderId, UsageLimits>> = {}
 /** Message of the last transient read failure, cleared by the next success. */
@@ -77,6 +79,8 @@ async function runRefresh(): Promise<void> {
   const disabled = new Set(loadSettings().disabledProviders)
   providers = await Promise.all(DRIVERS.map((d) => refreshDriver(d, disabled)))
   const state = getUsageState()
+  void recordSamples(state)
+  checkAlerts(state)
   const serialized = JSON.stringify(state)
   if (serialized !== lastPublished) {
     lastPublished = serialized

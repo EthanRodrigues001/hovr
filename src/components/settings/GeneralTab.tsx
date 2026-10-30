@@ -2,7 +2,7 @@
  * General tab: how the notch looks and behaves. Everything applies immediately.
  */
 import { useEffect, useState } from 'react'
-import type { CollapsedStyle, DisplayInfo } from '../../../shared/types'
+import type { CollapsedStyle, DisplayInfo, PillShow } from '../../../shared/types'
 import { edge } from '../../lib/edge'
 import { useStore } from '../../store/appStore'
 import { Row, Segmented, Switch } from '../ui'
@@ -40,6 +40,21 @@ export function GeneralTab() {
         />
       </Row>
 
+      <Row title="Collapsed notch shows" hint="Every connected tool, or just the one closest to its limit.">
+        <Segmented<PillShow>
+          value={settings.pillShow}
+          onChange={(pillShow) => void patch({ pillShow })}
+          options={[
+            { value: 'all', label: 'All tools' },
+            { value: 'tightest', label: 'Tightest' }
+          ]}
+        />
+      </Row>
+
+      <Row title="Alerts" hint="A notification when a limit is nearly used up or will run out before it resets.">
+        <Switch checked={settings.notifications} onChange={(notifications) => void patch({ notifications })} label="Alerts" />
+      </Row>
+
       <Row title="Refresh every" hint="How often usage is re-read in the background.">
         <Segmented<number>
           value={settings.usageRefreshMinutes}
@@ -66,11 +81,11 @@ export function GeneralTab() {
         />
       </Row>
 
-      <Row title="Dollar estimates in History" hint="Downloads a public price list once a day. Off shows token counts only.">
+      <Row title="Dollar estimates in Analytics" hint="Downloads a public price list once a day. Off shows token counts only.">
         <Switch
           checked={settings.showCostEstimates}
           onChange={(showCostEstimates) => void patch({ showCostEstimates })}
-          label="Dollar estimates in History"
+          label="Dollar estimates in Analytics"
         />
       </Row>
 

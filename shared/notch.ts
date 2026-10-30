@@ -8,14 +8,17 @@
  */
 export const NOTCH = {
   /** Transparent canvas size. Must fit the largest view (the settings sheet). */
-  windowWidth: 760,
-  windowHeight: 660,
+  windowWidth: 1080,
+  windowHeight: 760,
   /** Collapsed pill. */
   collapsedWidth: 268,
   collapsedHeight: 34,
   /** Usage card. */
-  cardWidth: 440,
-  cardMaxHeight: 560,
+  cardWidth: 640,
+  cardMaxHeight: 620,
+  /** Analytics modal. */
+  analyticsWidth: 1040,
+  analyticsHeight: 740,
   /** Settings sheet. */
   settingsWidth: 680,
   settingsHeight: 560,

@@ -14,6 +14,7 @@ import { setInteractive, repositionWindow, getDisplayListOptions, popUpAndRetrac
 import { rebuildTrayMenu } from './tray'
 import { quitAndInstallUpdate } from './updater'
 import { getHistory } from './history/historyService'
+import { readSamples } from './usageSamples'
 import { getUsageState, onUsageSettingsChanged, refreshUsage } from './usageService'
 
 /**
@@ -114,6 +115,7 @@ export function registerIpc(): void {
   })
 
   handle('history:get', (days) => getHistory(days))
+  handle('usage:samples', (provider, windowId, since) => readSamples(String(provider), String(windowId), Number(since) || 0))
 
   handle('displays:list', () => {
     return getDisplayListOptions()

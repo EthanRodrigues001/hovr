@@ -15,6 +15,7 @@ export interface DisplayInfo {
 }
 
 /** What the collapsed notch shows. */
+export type PillShow = 'all' | 'tightest'
 export type CollapsedStyle = 'chips' | 'dots'
 
 export interface Settings {
@@ -40,6 +41,10 @@ export interface Settings {
   stickDisplayScaleFactor?: number
   /** Provider ids the user switched off (not read, not shown). */
   disabledProviders: string[]
+  /** Desktop notification when a limit is nearly used up or will run out early. */
+  notifications: boolean
+  /** Collapsed pill: every provider, or only the single tightest limit. */
+  pillShow: PillShow
   /** Minutes between usage refreshes (1-60). */
   usageRefreshMinutes: number
   /**
@@ -60,6 +65,8 @@ export const DEFAULT_SETTINGS: Settings = {
   stickDisplayWorkArea: undefined,
   stickDisplayScaleFactor: undefined,
   disabledProviders: [],
+  notifications: true,
+  pillShow: 'all',
   usageRefreshMinutes: 5,
   showCostEstimates: true,
   lastSeenChangelogVersion: undefined

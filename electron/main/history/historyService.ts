@@ -1,5 +1,5 @@
 /**
- * Scans the local session logs of Claude Code and Codex and builds the History
+ * Scans the local session logs of Claude Code, Codex and Antigravity and builds the History
  * report. Read-only: nothing is written except the small price-table cache.
  *
  * Per-file results are cached by (mtime, size), so after the first scan only
@@ -8,12 +8,13 @@
 import { createReadStream } from 'node:fs'
 import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { createInterface } from 'node:readline'
 import type { HistoryProvider, HistoryReport } from '../../../shared/history'
 import { PATHS } from '../../store/paths'
 import { loadSettings } from '../../store/settings'
 import { buildReport } from './aggregate'
+import { readAntigravityDb } from './antigravityDb'
 import { initialCodexState, parseClaudeLine, parseCodexLine, type UsageRecord } from './parse'
 import { parseRateTable, type RateTable } from './pricing'
 
@@ -31,6 +32,45 @@ function claudeRoots(env: NodeJS.ProcessEnv): string[] {
 function codexRoots(env: NodeJS.ProcessEnv): string[] {
   const home = env.CODEX_HOME?.trim() || join(homedir(), '.codex')
   return [join(home, 'sessions'), join(home, 'archived_sessions')]
+}
+
+/** Antigravity keeps one SQLite file per conversation, here and in T3 Code's copy of its ACP data. */
+function antigravityRoots(): string[] {
+  const home = homedir()
+  return [join(home, '.gemini', 'antigravity', 'conversations'), join(home, '.gemini', 'antigravity-acp', 'conversations')]
+}
+
+async function antigravityDirs(): Promise<string[]> {
+  const dirs = antigravityRoots()
+  const t3 = join(homedir(), '.t3', 'userdata', 'providers', 'antigravity')
+  try {
+    for (const e of await readdir(t3)) dirs.push(join(t3, e, 'antigravity-acp', 'conversations'))
+  } catch {
+    /* T3 Code not installed */
+  }
+  return dirs
+}
+
+/** Every `.db` directly inside `dir` modified at or after `minMtime`. */
+async function listDbs(dir: string, minMtime: number): Promise<{ path: string; mtimeMs: number; size: number }[]> {
+  const out: { path: string; mtimeMs: number; size: number }[] = []
+  let names: string[]
+  try {
+    names = await readdir(dir)
+  } catch {
+    return out
+  }
+  for (const name of names) {
+    if (!name.endsWith('.db')) continue
+    const path = join(dir, name)
+    try {
+      const s = await stat(path)
+      if (s.isFile() && s.mtimeMs >= minMtime) out.push({ path, mtimeMs: s.mtimeMs, size: s.size })
+    } catch {
+      /* vanished */
+    }
+  }
+  return out
 }
 
 /** Every `.jsonl` under `dir` modified at or after `minMtime`. */
@@ -67,7 +107,41 @@ interface CachedFile {
 }
 const fileCache = new Map<string, CachedFile>()
 
-async function scanFile(path: string, provider: HistoryProvider): Promise<UsageRecord[]> {
+/* The per-file results are also kept on disk, so a fresh launch does not re-parse every log. */
+const CACHE_VERSION = 1
+const cacheFile = () => join(PATHS.root(), 'history-cache.json')
+let diskLoaded = false
+let saveTimer: NodeJS.Timeout | undefined
+
+async function loadDiskCache(): Promise<void> {
+  if (diskLoaded) return
+  diskLoaded = true
+  try {
+    const parsed = JSON.parse(await readFile(cacheFile(), 'utf8')) as { v?: number; files?: Record<string, CachedFile> }
+    if (parsed.v !== CACHE_VERSION || typeof parsed.files !== 'object' || parsed.files === null) return
+    for (const [path, entry] of Object.entries(parsed.files)) {
+      if (entry && Array.isArray(entry.records) && typeof entry.mtimeMs === 'number' && typeof entry.size === 'number') {
+        fileCache.set(path, entry)
+      }
+    }
+  } catch {
+    /* no cache yet, or unreadable: start fresh */
+  }
+}
+
+function saveDiskCacheSoon(): void {
+  clearTimeout(saveTimer)
+  saveTimer = setTimeout(() => {
+    const files: Record<string, CachedFile> = {}
+    for (const [path, entry] of fileCache) files[path] = entry
+    void mkdir(dirname(cacheFile()), { recursive: true })
+      .then(() => writeFile(cacheFile(), JSON.stringify({ v: CACHE_VERSION, files }), 'utf8'))
+      .catch(() => undefined)
+  }, 3000)
+}
+
+async function scanFile(path: string, provider: HistoryProvider, mtimeMs: number): Promise<UsageRecord[]> {
+  if (provider === 'antigravity') return readAntigravityDb(path, basename(path, '.db'), mtimeMs)
   const records: UsageRecord[] = []
   const codex = initialCodexState()
   const rl = createInterface({ input: createReadStream(path, { encoding: 'utf8' }), crlfDelay: Infinity })
@@ -91,18 +165,21 @@ async function recordsFor(
   provider: HistoryProvider
 ): Promise<UsageRecord[]> {
   const all: UsageRecord[] = []
+  let changed = false
   for (const f of files) {
     let cached = fileCache.get(f.path)
     if (!cached || cached.mtimeMs !== f.mtimeMs || cached.size !== f.size) {
       try {
-        cached = { mtimeMs: f.mtimeMs, size: f.size, records: await scanFile(f.path, provider) }
+        cached = { mtimeMs: f.mtimeMs, size: f.size, records: await scanFile(f.path, provider, f.mtimeMs) }
       } catch {
         continue // unreadable / locked: skip, never fail the whole report
       }
       fileCache.set(f.path, cached)
+      changed = true
     }
     all.push(...cached.records)
   }
+  if (changed) saveDiskCacheSoon()
   return all
 }
 
@@ -192,6 +269,7 @@ export function getHistory(daysRequested: number, env: NodeJS.ProcessEnv = proce
   const existing = inFlight.get(days)
   if (existing) return existing
   const run = (async () => {
+    await loadDiskCache()
     const now = Date.now()
     // A file last modified before the window started cannot hold records inside it.
     const minMtime = now - (days + 1) * DAY_MS
@@ -208,6 +286,15 @@ export function getHistory(daysRequested: number, env: NodeJS.ProcessEnv = proce
       records.push(...(await recordsFor(files, provider)))
     }
 
+    const agyFiles = (await Promise.all((await antigravityDirs()).map((d) => listDbs(d, minMtime)))).flat()
+    if (agyFiles.length > 0) {
+      const agy = await recordsFor(agyFiles, 'antigravity')
+      if (agy.length > 0) {
+        scanned.push('antigravity')
+        records.push(...agy)
+      }
+    }
+
     const prices = loadSettings().showCostEstimates ? await loadPrices() : null
     return buildReport({
       records: dedupe(records),
@@ -220,4 +307,9 @@ export function getHistory(daysRequested: number, env: NodeJS.ProcessEnv = proce
   })().finally(() => inFlight.delete(days))
   inFlight.set(days, run)
   return run
+}
+
+/** Scan in the background shortly after launch so the first Analytics open is instant. */
+export function prewarmHistory(): void {
+  setTimeout(() => void getHistory(MAX_HISTORY_DAYS).catch(() => undefined), 4000)
 }

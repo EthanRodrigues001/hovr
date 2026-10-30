@@ -2,7 +2,15 @@
  * Turns usage records into the report the History tab shows. Pure: takes `now`
  * and a time-zone-aware day key function so tests are deterministic.
  */
-import type { HistoryDay, HistoryModel, HistoryProvider, HistoryReport, TokenTotals } from '../../../shared/history'
+import type {
+  HistoryCostByType,
+  HistoryDay,
+  HistoryModel,
+  HistoryProvider,
+  HistoryProviderTotals,
+  HistoryReport,
+  TokenTotals
+} from '../../../shared/history'
 import { totalTokens } from '../../../shared/history'
 import type { UsageRecord } from './parse'
 import { costOf, lookupRate, type RateTable } from './pricing'
@@ -55,12 +63,16 @@ export function buildReport(input: {
   const dayMap = new Map<string, HistoryDay>()
   for (let i = 0; i < days; i++) {
     const key = localDayKey(since + i * DAY_MS + DAY_MS / 2)
-    dayMap.set(key, { date: key, tokens: 0, costUsd: null, byProvider: {} })
+    dayMap.set(key, { date: key, tokens: 0, costUsd: null, byProvider: {}, costByProvider: {} })
   }
 
   const totals = emptyTotals()
   let totalCost: number | null = null
   const models = new Map<string, HistoryModel>()
+  const providers = new Map<HistoryProvider, HistoryProviderTotals>()
+  const heatmap = Array.from({ length: 7 }, () => new Array<number>(24).fill(0))
+  let costByType: HistoryCostByType | null = null
+  let cacheSavings: number | null = null
 
   for (const r of input.records) {
     if (r.timestampMs < since || r.timestampMs > now + DAY_MS) continue
@@ -74,7 +86,31 @@ export function buildReport(input: {
     const cost = recordCost(r, rates)
     if (cost !== null) {
       day.costUsd = (day.costUsd ?? 0) + cost
+      day.costByProvider[r.provider] = (day.costByProvider[r.provider] ?? 0) + cost
       totalCost = (totalCost ?? 0) + cost
+    }
+
+    const when = new Date(r.timestampMs)
+    heatmap[when.getDay()][when.getHours()] += tokens
+
+    let p = providers.get(r.provider)
+    if (!p) {
+      p = { provider: r.provider, requests: 0, tokens: 0, costUsd: null }
+      providers.set(r.provider, p)
+    }
+    p.requests += 1
+    p.tokens += tokens
+    if (cost !== null) p.costUsd = (p.costUsd ?? 0) + cost
+
+    // Per-kind split only when this record was priced from the rate table.
+    const rate = r.reportedCostUsd === null && rates ? lookupRate(rates, r.model) : null
+    if (rate) {
+      costByType ??= { input: 0, cacheRead: 0, cacheWrite: 0, output: 0 }
+      costByType.input += r.input * rate.input
+      costByType.cacheRead += r.cacheRead * rate.cacheRead
+      costByType.cacheWrite += r.cacheWrite * rate.cacheWrite
+      costByType.output += r.output * rate.output
+      cacheSavings = (cacheSavings ?? 0) + r.cacheRead * (rate.input - rate.cacheRead)
     }
 
     const mkey = `${r.provider}\0${r.model}`
@@ -93,6 +129,10 @@ export function buildReport(input: {
     totals: { ...totals, costUsd: totalCost },
     byDay: [...dayMap.values()],
     byModel: [...models.values()].sort((a, b) => totalTokens(b.totals) - totalTokens(a.totals)),
+    byProvider: [...providers.values()].sort((a, b) => b.tokens - a.tokens),
+    costByType,
+    cacheSavingsUsd: cacheSavings,
+    heatmap,
     pricesAsOf: input.pricesAsOf,
     providersScanned: input.providersScanned
   }

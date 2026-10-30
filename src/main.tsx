@@ -7,6 +7,7 @@ import App from './App'
 import './styles/tokens.css'
 import './styles/global.css'
 import './styles/notch.css'
+import './styles/analytics.css'
 
 const container = document.getElementById('root')
 if (!container) throw new Error('#root element not found')

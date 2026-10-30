@@ -140,7 +140,9 @@ export function limitsNotice(limits: UsageLimits): string | null {
 }
 
 export function remainingPercent(window: UsageWindow): number {
-  return Math.round(100 - clampPercent(window.usedPercent))
+  const left = 100 - clampPercent(window.usedPercent)
+  // Never show a full 100% once anything has been used.
+  return window.usedPercent > 0 && left > 99.5 ? 99 : Math.round(left)
 }
 
 function resetMillis(window: UsageWindow): number | null {

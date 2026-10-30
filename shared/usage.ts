@@ -88,3 +88,9 @@ export interface UsageState {
   usage: Partial<Record<ProviderId, UsageLimits>>
   providers: ProviderStatus[]
 }
+
+/** One reading of a window's used %, kept locally to draw real usage curves. */
+export interface UsageSample {
+  t: number
+  used: number
+}

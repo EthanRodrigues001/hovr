@@ -39,6 +39,9 @@ export interface InvokeMap {
   /** Force a refresh of every provider; resolves once all reads settle. */
   'usage:refresh': { args: []; result: UsageState }
 
+  /** Recorded used % readings for one limit window since `since` (ms). */
+  'usage:samples': { args: [provider: string, windowId: string, since: number]; result: import('./usage').UsageSample[] }
+
   /** Token + cost history from local session logs, for the last `days` days. */
   'history:get': { args: [days: number]; result: HistoryReport }
 

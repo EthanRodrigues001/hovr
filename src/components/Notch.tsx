@@ -7,7 +7,7 @@
  * The inverse-corner "flares" at the top blend the notch into the screen edge.
  */
 import { AnimatePresence, motion } from 'framer-motion'
-import { RefreshCw, Settings as Cog, X } from 'lucide-react'
+import { BarChart3, ChevronRight, RefreshCw, Settings as Cog, X } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { NOTCH } from '../../shared/notch'
 import { worstRemainingPercent } from '../../shared/usageMath'
@@ -18,11 +18,13 @@ import { useStore } from '../store/appStore'
 import { Logo } from './Logo'
 import { ProviderRing } from './ProviderRing'
 import { SettingsSheet } from './SettingsSheet'
+import { AnalyticsView } from './analytics/AnalyticsView'
 import { ToastStack } from './Toast'
 import { UsageView } from './UsageView'
 
 const FLARE = 14
 const HEADER_H = 46
+const FOOTER_H = 38
 const MAX_CHIPS = 4
 
 interface Chip {
@@ -34,6 +36,7 @@ interface Chip {
 function useChips(): Chip[] {
   const providers = useStore((s) => s.providers)
   const usage = useStore((s) => s.usage)
+  const pillShow = useStore((s) => s.settings.pillShow)
   return useMemo(() => {
     const chips: Chip[] = []
     for (const status of providers) {
@@ -41,10 +44,17 @@ function useChips(): Chip[] {
       const windows = usage[status.id]?.windows ?? []
       if (windows.length > 0) chips.push({ status, remaining: worstRemainingPercent(windows) })
       // Signed in but failing: show a "?" so a silent outage is visible.
-      else if (status.authState === 'authenticated' && status.lastError) chips.push({ status, remaining: null })
+      // An expired login cannot be fixed from here, so it stays out of the pill (the card still lists it).
+      else if (status.authState === 'authenticated' && status.lastError && !/token expired|sign in/i.test(status.lastError)) {
+        chips.push({ status, remaining: null })
+      }
+    }
+    if (pillShow === 'tightest' && chips.length > 1) {
+      const known = chips.filter((c) => c.remaining !== null)
+      if (known.length > 0) return [known.reduce((a, b) => ((b.remaining as number) < (a.remaining as number) ? b : a))]
     }
     return chips
-  }, [providers, usage])
+  }, [providers, usage, pillShow])
 }
 
 function CollapsedPill({ chips, style }: { chips: Chip[]; style: 'chips' | 'dots' }) {
@@ -85,7 +95,21 @@ function UsageLayer({ onContentHeight }: { onContentHeight: (h: number) => void 
   const refreshing = useStore((s) => s.refreshing)
   const refresh = useStore((s) => s.refresh)
   const openSettings = useStore((s) => s.openSettings)
+  const openAnalytics = useStore((s) => s.openAnalytics)
   const contentRef = useRef<HTMLDivElement>(null)
+  const usage = useStore((s) => s.usage)
+  const refreshMinutes = useStore((s) => s.settings.usageRefreshMinutes)
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 30_000)
+    return () => window.clearInterval(t)
+  }, [])
+  const newest = Math.max(0, ...Object.values(usage).map((u) => (u ? Date.parse(u.checkedAt) || 0 : 0)))
+  const mins = newest ? Math.floor((now - newest) / 60_000) : null
+  const footerText =
+    mins === null
+      ? 'Waiting for the first reading'
+      : `Updated ${mins < 1 ? 'just now' : `${mins}m ago`} · refreshes every ${refreshMinutes} min`
 
   useLayoutEffect(() => {
     const el = contentRef.current
@@ -105,6 +129,9 @@ function UsageLayer({ onContentHeight }: { onContentHeight: (h: number) => void 
         <button className={`icon-btn ${refreshing ? 'spin' : ''}`} onClick={() => void refresh()} title="Refresh now" aria-label="Refresh now">
           <RefreshCw size={15} />
         </button>
+        <button className="icon-btn" onClick={() => openAnalytics()} title="Analytics" aria-label="Analytics">
+          <BarChart3 size={15} />
+        </button>
         <button className="icon-btn" onClick={() => openSettings()} title="Settings" aria-label="Settings">
           <Cog size={15} />
         </button>
@@ -116,6 +143,13 @@ function UsageLayer({ onContentHeight }: { onContentHeight: (h: number) => void 
         <div ref={contentRef}>
           <UsageView />
         </div>
+      </div>
+      <div className="nfoot" style={{ height: FOOTER_H }}>
+        <span className="nfoot-text">{footerText}</span>
+        <span className="spacer" />
+        <button className="nfoot-link" onClick={() => openAnalytics()}>
+          Analytics <ChevronRight size={13} />
+        </button>
       </div>
     </div>
   )
@@ -140,7 +174,9 @@ export function Notch() {
     ? { width: collapsedW, height: NOTCH.collapsedHeight, radius: NOTCH.collapsedHeight / 2 }
     : view === 'settings'
       ? { width: NOTCH.settingsWidth, height: NOTCH.settingsHeight, radius: 26 }
-      : { width: NOTCH.cardWidth, height: Math.min(NOTCH.cardMaxHeight, contentH + HEADER_H + 14), radius: 26 }
+      : view === 'analytics'
+        ? { width: NOTCH.analyticsWidth, height: NOTCH.analyticsHeight, radius: 28 }
+        : { width: NOTCH.cardWidth, height: Math.min(NOTCH.cardMaxHeight, contentH + HEADER_H + FOOTER_H + 14), radius: 26 }
 
   const spring = settings.reduceMotion
     ? { duration: 0 }
@@ -182,6 +218,11 @@ export function Notch() {
             {open && view === 'usage' && (
               <motion.div key="usage" className="layer-wrap" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.16, delay: 0.04 }}>
                 <UsageLayer onContentHeight={onContentHeight} />
+              </motion.div>
+            )}
+            {open && view === 'analytics' && (
+              <motion.div key="analytics" className="layer-wrap" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.16, delay: 0.04 }}>
+                <AnalyticsView />
               </motion.div>
             )}
             {open && view === 'settings' && (

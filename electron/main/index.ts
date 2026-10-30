@@ -16,6 +16,7 @@ import { registerIpc } from './ipc'
 import { loadSettings, pushState } from './state'
 import { initAutoUpdater } from './updater'
 import { startFullscreenMonitor, stopFullscreenMonitor, triggerFullscreenCheck } from './fullscreen'
+import { prewarmHistory } from './history/historyService'
 import { startUsageService, stopUsageService } from './usageService'
 
 // The notch is small and mostly static. Chromium's GPU process costs more memory
@@ -61,6 +62,7 @@ app.whenReady().then(() => {
   createTray()
   registerIpc()
   startUsageService()
+  prewarmHistory()
 
   // Alt+C toggles the notch (throttled so key repeat can't flicker it).
   let lastToggleTime = 0

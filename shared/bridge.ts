@@ -20,6 +20,7 @@ export interface EdgeApi {
   getUsage: () => Promise<UsageState>
   refreshUsage: () => Promise<UsageState>
   getHistory: (days: number) => Promise<HistoryReport>
+  getSamples: (provider: string, windowId: string, since: number) => Promise<import('./usage').UsageSample[]>
 
   /* Main -> Renderer. Each returns an unsubscribe function. */
   onUsage: (cb: (state: UsageState) => void) => () => void

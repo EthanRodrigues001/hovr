@@ -12,7 +12,7 @@ A notch at the top of your screen that shows how much of your AI coding tools' u
 | OpenCode | Go plan session / weekly / monthly | OpenCode Go key → `opencode.ai` |
 | Muse, Pi, Fx, Devin, Droid, Copilot, Gemini CLI | Detected only (no usage source is known) | PATH / config folder |
 
-Settings → **History** also totals tokens and estimated API cost per day and per model from the local session logs of Claude Code and Codex.
+The **Analytics** view (chart icon on the card) has a Forecast of which limits will run out before they reset, Spend (tokens and estimated API cost per day and per model from the local session logs of Claude Code, Codex and Antigravity) and a Timeline of every limit window. hovr can also show a desktop alert when a limit is nearly used up or will run out early.
 
 ## Using it
 

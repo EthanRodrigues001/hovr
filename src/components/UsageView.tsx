@@ -37,7 +37,7 @@ function ProviderCard({
         <span className="pcard-updated">{ago(limits?.checkedAt, now)}</span>
       </header>
       {windows.map((w) => (
-        <WindowRow key={w.id} window={w} now={now} />
+        <WindowRow key={w.id} window={w} now={now} provider={status.id} />
       ))}
       {status.stale && <div className="pcard-warn">Showing the last reading. {status.lastError}</div>}
     </section>

@@ -3,17 +3,15 @@
  * right. Providers is where tools are connected / switched off; General holds the
  * notch behaviour; About holds version, update and privacy notes.
  */
-import { ArrowLeft, BarChart3, Info, Plug, SlidersHorizontal, X, type LucideIcon } from 'lucide-react'
+import { ArrowLeft, Info, Plug, SlidersHorizontal, X, type LucideIcon } from 'lucide-react'
 import { closeNotch } from '../hooks/useNotchHover'
 import { type SettingsTab, useStore } from '../store/appStore'
 import { AboutTab } from './settings/AboutTab'
 import { GeneralTab } from './settings/GeneralTab'
-import { HistoryTab } from './settings/HistoryTab'
 import { ProvidersTab } from './settings/ProvidersTab'
 
 const TABS: ReadonlyArray<{ id: SettingsTab; label: string; Icon: LucideIcon }> = [
   { id: 'providers', label: 'Providers', Icon: Plug },
-  { id: 'history', label: 'History', Icon: BarChart3 },
   { id: 'general', label: 'General', Icon: SlidersHorizontal },
   { id: 'about', label: 'About', Icon: Info }
 ]
@@ -44,7 +42,6 @@ export function SettingsSheet() {
         </button>
         <div className="sheet-scroll">
           {tab === 'providers' && <ProvidersTab />}
-          {tab === 'history' && <HistoryTab />}
           {tab === 'general' && <GeneralTab />}
           {tab === 'about' && <AboutTab />}
         </div>

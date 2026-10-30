@@ -65,7 +65,7 @@ export function useNotchHover(): void {
 
     const scheduleClose = () => {
       if (closeTimer !== undefined) return
-      const delay = useStore.getState().view === 'settings' ? SETTINGS_CLOSE_DELAY_MS : CLOSE_DELAY_MS
+      const delay = useStore.getState().view !== 'usage' ? SETTINGS_CLOSE_DELAY_MS : CLOSE_DELAY_MS
       closeTimer = window.setTimeout(() => {
         closeTimer = undefined
         close()

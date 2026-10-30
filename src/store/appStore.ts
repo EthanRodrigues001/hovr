@@ -17,8 +17,9 @@ export interface ToastMsg {
   tone: 'info' | 'error'
 }
 
-export type View = 'usage' | 'settings'
-export type SettingsTab = 'providers' | 'history' | 'general' | 'about'
+export type View = 'usage' | 'settings' | 'analytics'
+export type SettingsTab = 'providers' | 'general' | 'about'
+export type AnalyticsTab = 'forecast' | 'spend' | 'timeline'
 
 interface AppState {
   settings: Settings
@@ -35,6 +36,7 @@ interface AppState {
   open: boolean
   view: View
   settingsTab: SettingsTab
+  analyticsTab: AnalyticsTab
 
   toasts: ToastMsg[]
   updateInfo: { latestVersion: string; downloaded: boolean } | null
@@ -47,7 +49,9 @@ interface AppState {
 
   setOpen: (open: boolean) => void
   openSettings: (tab?: SettingsTab) => void
+  openAnalytics: (tab?: AnalyticsTab) => void
   showUsage: () => void
+  setAnalyticsTab: (tab: AnalyticsTab) => void
   setSettingsTab: (tab: SettingsTab) => void
 
   pushToast: (toast: ToastMsg) => void
@@ -72,6 +76,7 @@ export const useStore = create<AppState>((set, get) => ({
   open: false,
   view: 'usage',
   settingsTab: 'providers',
+  analyticsTab: 'forecast',
 
   toasts: [],
   updateInfo: null,
@@ -104,7 +109,9 @@ export const useStore = create<AppState>((set, get) => ({
 
   setOpen: (open) => set(open ? { open } : { open, view: 'usage' }),
   openSettings: (tab) => set({ open: true, view: 'settings', ...(tab ? { settingsTab: tab } : {}) }),
+  openAnalytics: (tab) => set({ open: true, view: 'analytics', ...(tab ? { analyticsTab: tab } : {}) }),
   showUsage: () => set({ view: 'usage' }),
+  setAnalyticsTab: (analyticsTab) => set({ analyticsTab }),
   setSettingsTab: (settingsTab) => set({ settingsTab }),
 
   pushToast: (toast) => {

@@ -35,6 +35,7 @@ const api: EdgeApi = {
   getUsage: () => invoke('usage:get'),
   refreshUsage: () => invoke('usage:refresh'),
   getHistory: (days: number) => invoke('history:get', days),
+  getSamples: (provider, windowId, since) => invoke('usage:samples', provider, windowId, since),
 
   /* Main -> Renderer */
   onUsage: (cb) => on('usage:update', cb),
