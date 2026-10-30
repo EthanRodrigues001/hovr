@@ -28,7 +28,7 @@ function sampleState(now = Date.now()): UsageState {
   return {
     usage: {
       claude: limits([
-        { id: 'five_hour', kind: 'session', label: 'Session', usedPercent: 57, resetsAt: iso(3 * H), windowDurationMins: 300 },
+        { id: 'five_hour', kind: 'session', label: 'Session', usedPercent: 73, resetsAt: iso(3 * H), windowDurationMins: 300 },
         { id: 'seven_day', kind: 'weekly', label: 'Weekly', usedPercent: 30, resetsAt: iso(4.6 * D), windowDurationMins: 10080 }
       ]),
       codex: limits([{ id: 'monthly', kind: 'monthly', label: 'Monthly', usedPercent: 52, resetsAt: iso(18.8 * D), windowDurationMins: 31 * 1440 }]),

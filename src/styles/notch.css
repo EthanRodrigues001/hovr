@@ -264,8 +264,8 @@
   grid-template-columns: 188px 1fr;
   align-items: center;
   gap: 18px;
-  padding: 11px 18px;
-  margin-bottom: 7px;
+  padding: 9px 18px;
+  margin-bottom: 6px;
   border: 1px solid var(--hairline);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.015);
@@ -316,12 +316,6 @@
     color-mix(in srgb, var(--accent, #888) 34%, transparent) 0 1px,
     transparent 1px 5px
   );
-}
-.tone-bar-low {
-  --fill: color-mix(in srgb, var(--low) 34%, #000);
-}
-.tone-bar-critical {
-  --fill: color-mix(in srgb, var(--critical) 42%, #000);
 }
 .bar-fill {
   height: 100%;

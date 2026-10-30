@@ -1246,12 +1246,6 @@
   border-color: color-mix(in srgb, var(--acc, #8b8b8b) 70%, transparent);
   background: color-mix(in srgb, var(--acc, #8b8b8b) 16%, #0b0b0d);
 }
-.tl-cur.tl-tone-low {
-  --acc: #fbbf24;
-}
-.tl-cur.tl-tone-critical {
-  --acc: #f87171;
-}
 .tl-prog i {
   background: var(--acc, #aaa);
 }
