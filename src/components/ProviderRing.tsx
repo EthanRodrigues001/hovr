@@ -1,5 +1,5 @@
 /**
- * A tiny circular gauge showing how much of an allowance is left, tinted with the
+ * A tiny circular gauge showing how much of an allowance is left. At sizes of 20px and up it renders the tool's logo instead.
  * provider's accent. `remaining` is 0-100; null draws an empty ring.
  */
 import { PROVIDER_META } from '../lib/providers'
@@ -36,11 +36,8 @@ export function ProviderRing({ id, remaining, size = 18 }: Props) {
       />
     </svg>
   )
+  // Big spots show the logo alone (the bars next to it already show progress);
+  // the tiny pill spots show the progress ring alone.
   if (!withLogo) return ring
-  return (
-    <span className="ring-logo" style={{ width: size, height: size }}>
-      {ring}
-      <ProviderLogo id={id} size={Math.round(size * 0.58)} />
-    </span>
-  )
+  return <ProviderLogo id={id} size={Math.round(size * 0.85)} />
 }
