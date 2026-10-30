@@ -6,9 +6,11 @@
  * before the tick means you are burning faster than the window allows. The reset
  * countdown sits inside the bar at the right end.
  */
-import { Gauge, RotateCw, TrendingDown, TrendingUp } from 'lucide-react'
+import { AlertTriangle, Gauge, RotateCw, TrendingDown, TrendingUp } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import type { ProviderId, UsageWindow } from '../../shared/usage'
+import { forecastOf } from '../../shared/forecast'
+import { span, weekdayTime } from '../lib/format'
 import { formatResetsIn, paceOf, paceRemainingPercent, remainingPercent } from '../../shared/usageMath'
 import { PROVIDER_META, remainingTone } from '../lib/providers'
 
@@ -26,6 +28,8 @@ export function WindowRow({ window, now, provider }: { window: UsageWindow; now:
   const tick = paceRemainingPercent(window, now)
   const pace = paceOf(window, now)
   const resets = formatResetsIn(window, now)?.replace('resets in ', '') ?? null
+  const fc = forecastOf(window, now)
+  const runOut = fc && fc.runOutAt !== null && fc.runOutAt > now && fc.elapsed >= 0.05 ? fc.runOutAt : null
   const PaceIcon = pace ? PACE[pace].Icon : null
   const style = { '--accent': PROVIDER_META[provider].accent } as CSSProperties
 
@@ -55,12 +59,23 @@ export function WindowRow({ window, now, provider }: { window: UsageWindow; now:
       >
         <div className="bar-fill" style={{ width: `${exact}%` }} />
         {tick !== null && <div className="bar-tick" style={{ left: `${tick}%` }} title="Even-spend position" />}
-        {resets && (
-          <span className="bar-chip">
-            <RotateCw size={10} />
-            {resets}
-          </span>
-        )}
+        <div className="bar-chips">
+          {runOut !== null && fc && (
+            <span
+              className="bar-chip bar-chip-warn"
+              title={`At this pace it runs out ${weekdayTime(runOut, now)}, ${span(fc.lockedMs)} before it resets.`}
+            >
+              <AlertTriangle size={10} />
+              out in {span(runOut - now)}
+            </span>
+          )}
+          {resets && (
+            <span className="bar-chip">
+              <RotateCw size={10} />
+              {resets}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   )

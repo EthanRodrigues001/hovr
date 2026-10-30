@@ -57,6 +57,14 @@ describe('forecastOf', () => {
   })
 })
 
+describe('short session example', () => {
+  it('50% used 30 minutes into a 5-hour session runs out about 30 minutes from now', () => {
+    const f = forecastOf(win({ windowDurationMins: 300, usedPercent: 50, resetsAt: new Date(now + 270 * 60_000).toISOString() }), now)!
+    expect(f.runOutAt).toBeCloseTo(now + 30 * 60_000, -3)
+    expect(f.lockedMs).toBeCloseTo(240 * 60_000, -3)
+  })
+})
+
 describe('projectedUsedAt', () => {
   it('follows the pace line and clamps to 100', () => {
     const f = forecastOf(win({ usedPercent: 75 }), now)!

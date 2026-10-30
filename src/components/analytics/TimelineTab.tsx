@@ -172,6 +172,8 @@ export function TimelineTab() {
             const used = Math.max(0, Math.min(100, l.window.usedPercent))
             const tone = remainingTone(remainingPercent(l.window))
             const pace = paceOf(l.window, now)
+            const fc = forecastOf(l.window, now)
+            const runOut = fc && fc.runOutAt !== null && fc.runOutAt > now && fc.elapsed >= 0.05 ? fc.runOutAt : null
             const prevStart = l.startsAt - l.length
             const nextEnd = l.resetsAt + l.length
             const cur = { left: pct(l.startsAt), right: pct(l.resetsAt) }
@@ -189,6 +191,11 @@ export function TimelineTab() {
                   {weekdayTime(l.startsAt, now)} → {weekdayTime(l.resetsAt, now)}
                 </span>
                 <span>Resets in {span(Math.max(0, l.resetsAt - now))}</span>
+                {runOut !== null && fc && (
+                  <span className="tl-warn">
+                    Runs out {weekdayTime(runOut, now)} · locked {span(fc.lockedMs)}
+                  </span>
+                )}
               </>
             )
             return (
@@ -224,15 +231,25 @@ export function TimelineTab() {
                         {Math.round(used)}% Used · {weekdayTime(l.resetsAt, now)}
                       </span>
                     )}
+                    {runOut !== null && (
+                      <i className="tl-lock" style={{ width: `${((l.resetsAt - runOut) / l.length) * 100}%` }} />
+                    )}
                     <div className="tl-prog">
                       <i style={{ width: `${used}%` }} />
                       <u style={{ left: `${elapsed * 100}%` }} />
                     </div>
                   </div>
                   {narrow && (
-                    <span className="tl-outside" style={{ left: `${cur.right + 1.4}%` }}>
-                      {Math.round(used)}% Used · {weekdayTime(l.resetsAt, now)}
-                    </span>
+                    <div className="tl-outside" style={{ left: `${cur.right + 1.4}%` }}>
+                      <span>
+                        {Math.round(used)}% Used · resets {weekdayTime(l.resetsAt, now)}
+                      </span>
+                      <div className="tl-mini">
+                        <i style={{ width: `${used}%` }} />
+                        <u style={{ left: `${elapsed * 100}%` }} />
+                      </div>
+                      {runOut !== null && fc && <span className="tl-warn">Out ~{weekdayTime(runOut, now)}</span>}
+                    </div>
                   )}
                   {pct(l.resetsAt) < 100 && !narrow && (
                     <div className="tl-block tl-next" style={{ left: `${pct(l.resetsAt)}%`, width: `${pct(nextEnd) - pct(l.resetsAt)}%` }}>
