@@ -18,7 +18,7 @@ function describe(p: ProviderStatus, hasBars: boolean): { tone: Tone; text: stri
   if (!p.installed) return { tone: 'muted', text: 'Not installed' }
   if (!p.supportsLimits) return { tone: 'muted', text: 'Detected · no usage limits available' }
   if (hasBars) {
-    const parts = ['Connected', p.plan, p.account].filter(Boolean)
+    const parts = ['Connected', p.plan].filter(Boolean)
     return { tone: p.stale ? 'warn' : 'ok', text: parts.join(' · ') + (p.stale ? ' · last read failed' : '') }
   }
   if (p.authState === 'unauthenticated') return { tone: 'warn', text: p.hint ?? 'Sign-in needed' }

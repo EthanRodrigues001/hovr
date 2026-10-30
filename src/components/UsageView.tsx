@@ -33,7 +33,6 @@ function ProviderCard({
         <ProviderRing id={status.id} remaining={worstRemainingPercent(windows)} size={28} />
         <span className="pcard-name">{status.label}</span>
         {status.plan && <span className="pcard-plan">{status.plan}</span>}
-        {status.account && <span className="pcard-account">{status.account}</span>}
         <span className="pcard-updated">{ago(limits?.checkedAt, now)}</span>
       </header>
       {windows.map((w) => (
