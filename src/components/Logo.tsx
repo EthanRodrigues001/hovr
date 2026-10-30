@@ -1,6 +1,6 @@
 import { memo, forwardRef, type SVGProps } from 'react'
 
-const PATH = 'M24 56H176V104A40 40 0 0 1 136 144H64A40 40 0 0 1 24 104Z'
+const PATH = 'M70 22H442C400 22 378 46 378 102V204C378 272 326 328 256 328C186 328 134 272 134 204V102C134 46 112 22 70 22Z'
 
 export interface LogoProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
   /** Rendered size in px (or any CSS length). Square — the artwork is 1:1. */
@@ -19,7 +19,7 @@ export interface LogoProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
  * transitioned via CSS `color` — which is what lets it tint on hover alongside
  * the rest of the blade without a second render path.
  *
- * Placeholder artwork (a notch silhouette) until a real logo exists.
+ * The notch silhouette (same shape as the app icon).
  */
 export const Logo = memo(
   forwardRef<SVGSVGElement, LogoProps>(function Logo({ size = 24, title, ...props }, ref) {
@@ -28,7 +28,7 @@ export const Logo = memo(
         ref={ref}
         width={size}
         height={size}
-        viewBox="0 0 200 200"
+        viewBox="0 0 512 512"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         role={title ? 'img' : undefined}
