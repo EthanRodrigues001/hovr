@@ -151,7 +151,7 @@ function Detail({ item, now }: { item: Item; now: number }) {
   return (
     <aside className="fc-detail">
       <div className="fc-detail-head">
-        <ProviderRing id={item.provider} remaining={100 - f.usedNow} size={22} />
+        <ProviderRing id={item.provider} remaining={100 - f.usedNow} size={30} />
         <div>
           <div className="fc-detail-name">{item.providerLabel}</div>
           <div className="muted">{[item.plan, window.label].filter(Boolean).join(' · ')}</div>
@@ -262,7 +262,7 @@ export function ForecastTab() {
         <TickBar
           ticks={110}
           segments={[
-            { label: 'Last until reset', value: items.filter((i) => i.forecast.runOutAt === null && i.forecast.projectedAtReset !== null).length, color: '#4f8cff' },
+            { label: 'Last until reset', value: items.filter((i) => i.forecast.runOutAt === null && i.forecast.projectedAtReset !== null).length, color: '#4ade80' },
             { label: 'Run out', value: outs.length, color: '#f87171' },
             { label: 'Too early', value: items.filter((i) => i.forecast.projectedAtReset === null).length, color: '#6b7280' }
           ]}
@@ -282,7 +282,7 @@ export function ForecastTab() {
             return (
               <button key={item.key} className={`fc-row ${item === current ? 'on' : ''}`} onClick={() => setSelected(item.key)}>
                 <span className="fc-name">
-                  <ProviderRing id={item.provider} remaining={100 - item.forecast.usedNow} size={16} />
+                  <ProviderRing id={item.provider} remaining={100 - item.forecast.usedNow} size={20} />
                   <span>
                     {item.providerLabel} <em>{item.window.label}</em>
                   </span>

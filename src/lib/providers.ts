@@ -14,7 +14,7 @@ export const PROVIDER_META: Record<ProviderId, ProviderMeta> = {
   claude: { short: 'Claude', accent: '#d97757', glyph: 'C' },
   codex: { short: 'Codex', accent: '#10a37f', glyph: 'X' },
   cursor: { short: 'Cursor', accent: '#e6e6e6', glyph: 'C' },
-  antigravity: { short: 'Antigravity', accent: '#6c9cff', glyph: 'A' },
+  antigravity: { short: 'Antigravity', accent: '#5b9dff', glyph: 'A' },
   grok: { short: 'Grok', accent: '#f4f4f4', glyph: 'G' },
   opencode: { short: 'OpenCode', accent: '#9b8cff', glyph: 'O' },
   muse: { short: 'Muse', accent: '#c084fc', glyph: 'M' },

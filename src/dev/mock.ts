@@ -57,19 +57,47 @@ if (import.meta.env.DEV && params.get('mock')) {
     getUsage: async () => sampleState(),
     refreshUsage: async () => sampleState(),
     getHistory: async (days) => {
-      const empty = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, requests: 0 }
+      const DAY = 86_400_000
+      const byDay = Array.from({ length: days }, (_, i) => {
+        const d = new Date(Date.now() - (days - 1 - i) * DAY)
+        const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        const wave = 0.5 + 0.5 * Math.sin(i / 2.3)
+        const claude = Math.round(40 * wave * (i % 6 === 5 ? 0.1 : 1) * 1e6)
+        const codex = Math.round(3 * wave * 1e6)
+        const agy = i % 4 === 0 ? Math.round(9 * wave * 1e6) : 0
+        return {
+          date,
+          tokens: claude + codex + agy,
+          costUsd: claude / 1e6 * 1.1 + codex / 1e6 * 0.4 + agy / 1e6 * 0.15,
+          byProvider: { claude, codex, antigravity: agy },
+          costByProvider: { claude: claude / 1e6 * 1.1, codex: codex / 1e6 * 0.4, antigravity: agy / 1e6 * 0.15 }
+        }
+      })
+      const tokens = byDay.reduce((a, d) => a + d.tokens, 0)
+      const cost = byDay.reduce((a, d) => a + (d.costUsd ?? 0), 0)
+      const sum = (p: 'claude' | 'codex' | 'antigravity') => byDay.reduce((a, d) => a + (d.byProvider[p] ?? 0), 0)
+      const sumC = (p: 'claude' | 'codex' | 'antigravity') => byDay.reduce((a, d) => a + (d.costByProvider[p] ?? 0), 0)
       return {
         generatedAt: new Date().toISOString(),
         days,
-        totals: { ...empty, costUsd: null },
-        byDay: [],
-        byModel: [],
-        byProvider: [],
-        costByType: null,
-        cacheSavingsUsd: null,
+        totals: { input: tokens * 0.002, output: tokens * 0.004, cacheRead: tokens * 0.9, cacheWrite: tokens * 0.09, requests: Math.round(tokens / 2e5), costUsd: cost },
+        byDay,
+        byModel: [
+          { provider: 'claude' as const, model: 'claude-opus-5', totals: { input: 1, output: 1, cacheRead: sum('claude') * 0.4, cacheWrite: 1, requests: 100 }, costUsd: sumC('claude') * 0.55 },
+          { provider: 'claude' as const, model: 'claude-sonnet-5-5', totals: { input: 1, output: 1, cacheRead: sum('claude') * 0.6, cacheWrite: 1, requests: 200 }, costUsd: sumC('claude') * 0.45 },
+          { provider: 'antigravity' as const, model: 'gemini-3-flash', totals: { input: 1, output: 1, cacheRead: sum('antigravity'), cacheWrite: 1, requests: 50 }, costUsd: sumC('antigravity') },
+          { provider: 'codex' as const, model: 'gpt-5', totals: { input: 1, output: 1, cacheRead: sum('codex'), cacheWrite: 1, requests: 20 }, costUsd: sumC('codex') }
+        ],
+        byProvider: [
+          { provider: 'claude' as const, requests: 900, tokens: sum('claude'), costUsd: sumC('claude') },
+          { provider: 'antigravity' as const, requests: 300, tokens: sum('antigravity'), costUsd: sumC('antigravity') },
+          { provider: 'codex' as const, requests: 50, tokens: sum('codex'), costUsd: sumC('codex') }
+        ],
+        costByType: { input: cost * 0.001, cacheRead: cost * 0.55, cacheWrite: cost * 0.25, output: cost * 0.2 },
+        cacheSavingsUsd: cost * 8,
         heatmap: Array.from({ length: 7 }, () => new Array<number>(24).fill(0)),
-        pricesAsOf: null,
-        providersScanned: []
+        pricesAsOf: new Date().toISOString(),
+        providersScanned: ['claude', 'codex', 'antigravity'] as Array<'claude' | 'codex' | 'antigravity'>
       }
     },
     getSamples: async () => [],

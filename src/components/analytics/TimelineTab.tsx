@@ -155,7 +155,7 @@ export function TimelineTab() {
         <section key={g.provider} className="tl-group">
           <div className="tl-row tl-ghead">
             <div className="tl-left">
-              <ProviderRing id={g.provider} remaining={Math.min(...g.lanes.map((l) => remainingPercent(l.window)))} size={16} />
+              <ProviderRing id={g.provider} remaining={Math.min(...g.lanes.map((l) => remainingPercent(l.window)))} size={22} />
               <b>{g.name}</b>
               {g.plan && <em>{g.plan}</em>}
               <span>
@@ -275,7 +275,7 @@ export function TimelineTab() {
             const used = Math.max(0, Math.min(100, l.window.usedPercent))
             return (
               <div key={l.key} className="tl-uprow" style={{ '--acc': PROVIDER_META[l.provider].accent } as CSSProperties}>
-                <ProviderRing id={l.provider} remaining={100 - used} size={16} />
+                <ProviderRing id={l.provider} remaining={100 - used} size={20} />
                 <span className="tl-upname">
                   {l.name} <em>{l.window.label}</em>
                 </span>

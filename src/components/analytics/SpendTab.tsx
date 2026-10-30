@@ -15,7 +15,7 @@ import { ReportGate } from './ReportGate'
 import { TickBar } from './TickBar'
 
 const PROVIDERS: readonly HistoryProvider[] = ['claude', 'codex', 'antigravity']
-const KIND_COLORS = { input: '#6b7280', cacheRead: '#a3a3a3', cacheWrite: '#d4d4d4', output: '#ffffff' } as const
+const KIND_COLORS = { input: '#454a9a', cacheRead: '#6a6fd0', cacheWrite: '#8b8fff', output: '#d6d8ff' } as const
 
 function ChartTooltip({ active, payload, label, money }: { active?: boolean; payload?: Array<{ dataKey: string; value: number }>; label?: string; money: boolean }) {
   if (!active || !payload?.length) return null

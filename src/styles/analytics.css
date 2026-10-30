@@ -1413,3 +1413,35 @@
 .tl-cur.tl-narrow {
   background: linear-gradient(to top, color-mix(in srgb, var(--acc, #888) 55%, transparent) var(--used, 0%), color-mix(in srgb, var(--acc, #888) 12%, #0b0b0d) var(--used, 0%));
 }
+
+/* ===== palette pass: app accent ramp for neutral series ===== */
+.fc-s1 {
+  background: rgba(139, 143, 255, 0.2);
+}
+.fc-s2 {
+  background: rgba(139, 143, 255, 0.38);
+}
+.fc-s3 {
+  background: rgba(139, 143, 255, 0.62);
+}
+.fc-s4 {
+  background: rgba(139, 143, 255, 0.92);
+}
+.fc-reset,
+.fc-reset-key {
+  background: #fff;
+}
+.tl-days div.on {
+  background: var(--brand-soft);
+}
+.tl-today {
+  background: rgba(139, 143, 255, 0.06);
+}
+.tl-now,
+.tl-days div.on b {
+  background-color: var(--brand);
+}
+.tl-days div.on b {
+  background: none;
+  color: #fff;
+}

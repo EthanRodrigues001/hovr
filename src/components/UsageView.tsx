@@ -30,7 +30,7 @@ function ProviderCard({
   return (
     <section className="pcard">
       <header className="pcard-head">
-        <ProviderRing id={status.id} remaining={worstRemainingPercent(windows)} size={16} />
+        <ProviderRing id={status.id} remaining={worstRemainingPercent(windows)} size={22} />
         <span className="pcard-name">{status.label}</span>
         {status.plan && <span className="pcard-plan">{status.plan}</span>}
         {status.account && <span className="pcard-account">{status.account}</span>}
