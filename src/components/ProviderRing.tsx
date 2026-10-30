@@ -40,7 +40,7 @@ export function ProviderRing({ id, remaining, size = 18 }: Props) {
   return (
     <span className="ring-logo" style={{ width: size, height: size }}>
       {ring}
-      <ProviderLogo id={id} size={Math.round(size * 0.52)} />
+      <ProviderLogo id={id} size={Math.round(size * 0.58)} />
     </span>
   )
 }
