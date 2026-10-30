@@ -13,7 +13,7 @@ import { NOTCH } from '../../shared/notch'
 import { worstRemainingPercent } from '../../shared/usageMath'
 import type { ProviderStatus } from '../../shared/usage'
 import { closeNotch, registerNotchElement } from '../hooks/useNotchHover'
-import { remainingTone } from '../lib/providers'
+import { PROVIDER_META, remainingTone } from '../lib/providers'
 import { useStore } from '../store/appStore'
 import { Logo } from './Logo'
 import { ProviderRing } from './ProviderRing'
@@ -75,9 +75,11 @@ function CollapsedPill({ chips, style }: { chips: Chip[]; style: 'chips' | 'dots
         const tone = remaining === null ? 'low' : remainingTone(remaining)
         return (
           <span className="chip" key={status.id} title={`${status.label}: ${remaining === null ? 'unavailable' : `${remaining}% left`}`}>
-            <ProviderRing id={status.id} remaining={remaining} size={16} />
-            {style === 'chips' && <span className={`chip-pct tone-${tone}`}>{remaining === null ? '?' : `${remaining}%`}</span>}
-            {style === 'dots' && <span className={`dot tone-${tone}`} />}
+            <ProviderRing id={status.id} remaining={remaining} size={18} />
+            {style === 'chips' && (
+              <span className={`chip-pct ${tone === 'critical' ? 'tone-critical' : ''}`}>{remaining === null ? '?' : `${remaining}%`}</span>
+            )}
+            {style === 'dots' && <span className="dot" style={{ background: PROVIDER_META[status.id].accent }} />}
           </span>
         )
       })}

@@ -108,6 +108,7 @@
   gap: 5px;
 }
 .chip-pct {
+  color: rgba(255, 255, 255, 0.92);
   font-size: 12px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
