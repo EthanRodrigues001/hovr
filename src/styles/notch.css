@@ -292,7 +292,7 @@
   font-weight: 650;
   letter-spacing: -0.02em;
   line-height: 1.1;
-  color: color-mix(in srgb, var(--accent, #fff) 55%, #fff);
+  color: rgba(255, 255, 255, 0.72);
   font-variant-numeric: tabular-nums;
 }
 .wrow-left {
