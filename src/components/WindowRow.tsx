@@ -48,6 +48,12 @@ export function WindowRow({ window, now, provider }: { window: UsageWindow; now:
             </span>
           )}
         </div>
+        {runOut !== null && fc && (
+          <div className="wrow-out" title={`At this pace it runs out ${weekdayTime(runOut, now)}, ${span(fc.lockedMs)} before it resets.`}>
+            <AlertTriangle size={11} />
+            Out in {span(runOut - now)} at this pace
+          </div>
+        )}
       </div>
       <div
         className={`bar tone-bar-${tone}`}
@@ -60,15 +66,6 @@ export function WindowRow({ window, now, provider }: { window: UsageWindow; now:
         <div className="bar-fill" style={{ width: `${exact}%` }} />
         {tick !== null && <div className="bar-tick" style={{ left: `${tick}%` }} title="Even-spend position" />}
         <div className="bar-chips">
-          {runOut !== null && fc && (
-            <span
-              className="bar-chip bar-chip-warn"
-              title={`At this pace it runs out ${weekdayTime(runOut, now)}, ${span(fc.lockedMs)} before it resets.`}
-            >
-              <AlertTriangle size={10} />
-              out in {span(runOut - now)}
-            </span>
-          )}
           {resets && (
             <span className="bar-chip">
               <RotateCw size={10} />
