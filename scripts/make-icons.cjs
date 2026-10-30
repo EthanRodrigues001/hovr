@@ -2,8 +2,10 @@
  * Renders hovr's mark and every icon size the app and installer need.
  *   node scripts/make-icons.cjs
  *
- * The mark: a screen seen at an angle (a black body with a light face) with a notch
- * hanging from the top edge of the face, with a progress loader (and %) in it.
+ * The mark: a screen seen at an angle. A black body (thick on the left and bottom,
+ * thin on the top and right, chamfered at two corners) holds a light, slightly
+ * sheared face. A rectangular notch hangs from the top edge of the face and holds a
+ * progress loader with a % sign. Coordinates come from tracing the reference mark.
  */
 const { Resvg } = require('@resvg/resvg-js')
 const { mkdirSync, writeFileSync } = require('node:fs')
@@ -11,64 +13,72 @@ const { join } = require('node:path')
 
 const root = join(__dirname, '..')
 
-/* ---- the mark, in a 512 box ---- */
-const BODY = '130,190 170,150 380,150 380,360 340,400 130,400' // extruded body, stroked round
-const FACE = { x: 184, y: 164, w: 182, h: 182, r: 18 } // light face (the "screen")
-const NOTCH = 'M201 158C212 158 215 163 215 174V234C215 243 222 250 231 250H319C328 250 335 243 335 234V174C335 163 338 158 349 158Z'
-const BARS = []
-// loader (progress ring with a % inside), cut out of the notch
-const LOADER = { cx: 275, cy: 206, r: 25, w: 7 }
-const STROKE = 26
+/* ---- the mark, in the reference's own coordinate space ---- */
+const BODY = '292,342 463,342 485,356 493,517 452,574 266,576 252,556 240,396' // stroked round
+const BODY_STROKE = 14
+const FACE = '306,359 457,359 471,510 321,510' // stroked round in the face colour
+const FACE_STROKE = 18
+const LEAN = 0.095 // how far the sheared parts shift right per unit of height
+const NOTCH = 'M316 345C326 345 330 350 330 360V412C330 421 337 428 346 428H414C423 428 430 421 430 412V360C430 350 434 345 444 345Z'
+const LOADER = { cx: 380, cy: 389, r: 19, w: 5.5 }
+const VIEW = { x: 224, y: 314, size: 286 } // square window around the mark
+const CANVAS = { w: 735, h: 919 }
 
+/** Notch + loader shear with the face so they follow its tilt. */
+const shear = `matrix(1 0 ${LEAN} 1 ${-LEAN * 350} 0)`
 
-/** The loader: a 3/4 progress ring with a % sign inside, drawn in `c` (and `track` for the rest of the ring). */
 function loader(c, track) {
   const { cx, cy, r, w } = LOADER
-  const o = 8.6
+  const o = 6.6
   return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${track}" stroke-width="${w}"/>
     <path d="M${cx} ${cy - r} A${r} ${r} 0 1 1 ${cx - r} ${cy}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>
-    <circle cx="${cx - o}" cy="${cy - o}" r="3.5" fill="none" stroke="${c}" stroke-width="2.8"/>
-    <circle cx="${cx + o}" cy="${cy + o}" r="3.5" fill="none" stroke="${c}" stroke-width="2.8"/>
-    <path d="M${cx + 8.5} ${cy - 9.5} L${cx - 8.5} ${cy + 9.5}" stroke="${c}" stroke-width="3" stroke-linecap="round"/>`
+    <circle cx="${cx - o}" cy="${cy - o}" r="2.7" fill="none" stroke="${c}" stroke-width="2.2"/>
+    <circle cx="${cx + o}" cy="${cy + o}" r="2.7" fill="none" stroke="${c}" stroke-width="2.2"/>
+    <path d="M${cx + 6.5} ${cy - 7.5} L${cx - 6.5} ${cy + 7.5}" stroke="${c}" stroke-width="2.4" stroke-linecap="round"/>`
 }
 
-/** Mark drawn in `ink` with the face showing `face` (use for a flat tile). */
+/** Mark in `ink` on a flat background `face` (for tiles). */
 function markFlat(ink, face) {
   return `<g>
-    <polygon points="${BODY}" fill="${ink}" stroke="${ink}" stroke-width="${STROKE}" stroke-linejoin="round"/>
-    <rect x="${FACE.x}" y="${FACE.y}" width="${FACE.w}" height="${FACE.h}" rx="${FACE.r}" fill="${face}"/>
-    <path d="${NOTCH}" fill="${ink}"/>
-    ${loader(face, ink === face ? face : "rgba(255,255,255,0.28)")}
+    <polygon points="${BODY}" fill="${ink}" stroke="${ink}" stroke-width="${BODY_STROKE}" stroke-linejoin="round"/>
+    <polygon points="${FACE}" fill="${face}" stroke="${face}" stroke-width="${FACE_STROKE}" stroke-linejoin="round"/>
+    <g transform="${shear}">
+      <path d="${NOTCH}" fill="${ink}"/>
+      ${loader(face, 'rgba(255,255,255,0.28)')}
+    </g>
   </g>`
 }
 
-/** Mark with a transparent face, via a mask (for tray / in-app single-colour use). */
+/** Mark with a transparent face, via a mask (tray, in-app, single colour). */
 function markMasked(ink, id = 'cut') {
   return `<defs>
-    <mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
-      <polygon points="${BODY}" fill="#fff" stroke="#fff" stroke-width="${STROKE}" stroke-linejoin="round"/>
-      <rect x="${FACE.x}" y="${FACE.y}" width="${FACE.w}" height="${FACE.h}" rx="${FACE.r}" fill="#000"/>
-      <path d="${NOTCH}" fill="#fff"/>
-      ${loader("#000", "rgba(0,0,0,0.65)")}
+    <mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${CANVAS.w}" height="${CANVAS.h}">
+      <polygon points="${BODY}" fill="#fff" stroke="#fff" stroke-width="${BODY_STROKE}" stroke-linejoin="round"/>
+      <polygon points="${FACE}" fill="#000" stroke="#000" stroke-width="${FACE_STROKE}" stroke-linejoin="round"/>
+      <g transform="${shear}">
+        <path d="${NOTCH}" fill="#fff"/>
+        ${loader('#000', 'rgba(0,0,0,0.65)')}
+      </g>
     </mask>
   </defs>
-  <rect width="512" height="512" fill="${ink}" mask="url(#${id})"/>`
+  <rect width="${CANVAS.w}" height="${CANVAS.h}" fill="${ink}" mask="url(#${id})"/>`
 }
 
-const fit = (inner) => `<g transform="translate(256 256) scale(1.12) translate(-255 -275)">${inner}</g>`
+const cx0 = VIEW.x + VIEW.size / 2
+const cy0 = VIEW.y + VIEW.size / 2
+const fit = (inner, scale) => `<g transform="translate(256 256) scale(${scale}) translate(${-cx0} ${-cy0})">${inner}</g>`
 
 const tile = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <rect x="8" y="8" width="496" height="496" rx="120" fill="#e7e7e7"/>
-  ${fit(markFlat('#0b0b0b', '#e7e7e7'))}
+  ${fit(markFlat("#0b0b0b", "#e7e7e7"), 1.3)}
 </svg>`
 
-const mono = (ink) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+const mono = (ink) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VIEW.x} ${VIEW.y} ${VIEW.size} ${VIEW.size}" width="512" height="512">
   ${markMasked(ink)}
 </svg>`
 
-/** For the tray, the mark fills the square so it stays legible at 16px. */
 const trayMono = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <g transform="translate(256 256) scale(1.45) translate(-255 -275)">${markMasked('#ffffff')}</g>
+  ${fit(markMasked('#ffffff'), 1.75)}
 </svg>`
 
 function png(svg, size) {
@@ -121,11 +131,15 @@ for (const [name, w, h] of [
   writeFileSync(out(`resources/appx/${name}`), png(wide, w))
 }
 
-writeFileSync(out('src/assets/logo.svg'), `<svg width="200" height="200" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">${mono('#FFFFFF').replace(/\n\s*/g, '')}</svg>\n`)
+writeFileSync(out('src/assets/logo.svg'), `${mono('#FFFFFF').replace(/\n\s*/g, '')}\n`)
 
-// Data the React Logo component embeds (kept in one place so the shapes never drift).
+// Shapes the React Logo component draws, so the app and the icon never drift apart.
 writeFileSync(
   out('src/lib/markShapes.ts'),
-  `/** Generated by scripts/make-icons.cjs. The hovr mark in a 512 box. */\nexport const MARK = ${JSON.stringify({ BODY, FACE, NOTCH, LOADER, STROKE }, null, 2)} as const\n`
+  `/** Generated by scripts/make-icons.cjs. The hovr mark, in the reference's coordinate space. */\nexport const MARK = ${JSON.stringify(
+    { BODY, BODY_STROKE, FACE, FACE_STROKE, LEAN, NOTCH, LOADER, VIEW, CANVAS },
+    null,
+    2
+  )} as const\n`
 )
 console.log('icons written')
