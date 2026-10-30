@@ -45,6 +45,12 @@ Windows 11, Electron + React + TypeScript (electron-vite). Layout:
 - `electron/main/window.ts`, `geometry.ts`: the transparent top-centre window, cursor-poll hover, multi-display placement.
 - `src/`: the notch, usage card and settings sheet.
 
-## Credits
+## Credits and licence
 
-Forked from [Edge-Drop](https://github.com/Deepender25/Edge-Drop) (Apache-2.0); see `NOTICE`. The provider usage logic is a behavioural port of what [T3 Code](https://github.com/pingdotgg/t3code) (MIT) does, written fresh for hovr. Licensed Apache-2.0.
+hovr is licensed under the [Apache License 2.0](LICENSE).
+
+- **Edge-Drop** by Deepender25 and contributors (Apache-2.0): https://github.com/Deepender25/Edge-Drop. hovr started as a fork of Edge-Drop v0.2.2 (commit `5a7c907`, tagged `upstream-baseline`). It keeps the transparent edge-anchored window, the hover-expand interaction and the Electron/React structure, and replaces the clipboard-manager features with the usage-limits notch. Edge-Drop's files have been modified; `git diff upstream-baseline` shows every change.
+- **T3 Code** by T3 Tools Inc. (MIT, Copyright (c) 2026 T3 Tools Inc.): https://github.com/pingdotgg/t3code. The provider usage logic follows what T3 Code does (which endpoint each tool exposes, the Antigravity conversation-database field layout and model-id table). hovr's code for it is written fresh, and the facts above come from T3 Code's MIT-licensed source.
+- Dollar estimates use the public [LiteLLM](https://github.com/BerriAI/litellm) (MIT) price list, downloaded at runtime and not bundled.
+
+Claude, Codex, Cursor, Antigravity, Grok, OpenCode and the other tools named here belong to their owners; hovr is not affiliated with or endorsed by them.
