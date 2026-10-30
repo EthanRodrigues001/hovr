@@ -13,10 +13,10 @@
   --surface-3: rgba(255, 255, 255, 0.14);
   --hairline: rgba(255, 255, 255, 0.07);
 
-  /* App accent: neutral chart series, selection, links. Provider colours stay per tool. */
-  --brand: #2dd4bf;
-  --brand-soft: rgba(45, 212, 191, 0.16);
-  --ok: #6ee7a8;
+  /* App accent: neutral chart series and selection (kept grey on purpose). Provider colours stay per tool. */
+  --brand: #d4d4d8;
+  --brand-soft: rgba(255, 255, 255, 0.1);
+  --ok: #4ade80;
   --low: #fbbf24;
   --critical: #f87171;
 
