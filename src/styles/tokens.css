@@ -1,49 +1,21 @@
 /**
- * Design tokens — the deep-black, macOS-inspired palette.
- *
- * The blade reads as a piece of glass extending out of the screen edge:
- * layered near-black gradients, a 1px inner light edge, soft shadow, and an
- * accent glow. Colors are exposed as CSS custom properties so the theme layer
- * can swap the accent at runtime.
+ * Design tokens: a deep-black notch with soft, low-contrast surfaces.
+ * Status colours are shared by bars, percentages and dots.
  */
 :root {
-  /* Base blacks — stacked for depth, never a flat #000. */
-  --bg-0: #000000; /* deepest core */
-  --bg-1: #060608; /* blade body */
-  --bg-2: #0c0c10; /* raised surface */
-  --bg-3: #141418; /* hover surface */
-  --bg-glass: rgba(12, 12, 16, 0.72); /* frosted backdrop */
-
-  /* Hairlines & inner light edge */
-  --edge-light: rgba(255, 255, 255, 0.06);
-  --edge-strong: rgba(255, 255, 255, 0.12);
-  --divider: rgba(255, 255, 255, 0.07);
-
-  /* Text — High Contrast & Ultra-Legible */
   --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.88);
-  --text-tertiary: rgba(255, 255, 255, 0.68);
+  --text-secondary: rgba(255, 255, 255, 0.86);
+  --text-tertiary: rgba(255, 255, 255, 0.58);
+  --text-faint: rgba(255, 255, 255, 0.4);
 
-  /* Accent (overridden at runtime by theme.ts) */
-  --accent: #8b5cf6;
-  --accent-glow: rgba(139, 92, 246, 0.55);
+  --surface-1: rgba(255, 255, 255, 0.045);
+  --surface-2: rgba(255, 255, 255, 0.08);
+  --surface-3: rgba(255, 255, 255, 0.14);
+  --hairline: rgba(255, 255, 255, 0.07);
 
-  /* Shape & depth */
-  --radius-blade: 22px;
-  --radius-card: 14px;
-  --radius-pill: 999px;
-  --shadow-blade: 0 0 0 1px var(--edge-light), 0 30px 80px rgba(0, 0, 0, 0.65),
-    0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-card: 0 1px 0 var(--edge-light) inset, 0 6px 18px rgba(0, 0, 0, 0.4);
+  --ok: #6ee7a8;
+  --low: #fbbf24;
+  --critical: #f87171;
 
-  /* Motion */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --dur-fast: 140ms;
-  --dur-base: 240ms;
-
-  /* Layout */
-  --panel-width: 270px;
-  --gap: 12px;
-  --pad: 14px;
 }

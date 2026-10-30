@@ -1,10 +1,9 @@
 /**
  * Global reset + base rules.
  *
- * The renderer root is transparent (the window itself is transparent), so we
- * never paint a body background — the blade paints itself via the Panel
- * component. Text selection and native drag ghosts are disabled everywhere so
- * the only drags are the ones we explicitly start.
+ * The renderer root is transparent (the window itself is transparent), so no body
+ * background is ever painted: the notch paints itself. Text selection and native
+ * drag ghosts are disabled; the UI is mouse-only (the window is not focusable).
  */
 *,
 *::before,
@@ -22,91 +21,27 @@ body,
 }
 
 html {
-  /* The window is click-through; let pointer events flow but keep our own UI
-     interactive when the blade is open. */
   background: transparent;
 }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 13px;
-  line-height: 1.48;
+  line-height: 1.45;
   color: var(--text-primary);
   background: transparent;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   user-select: none;
   -webkit-user-select: none;
   cursor: default;
 }
 
-/* No native drag ghosts on media (we own dragging via IPC for items).
-   NOTE: do NOT apply -webkit-user-drag: none to '*' — that disables
-   dragstart on every element, which breaks our draggable item tiles and
-   file sub-rows. Scope it to img/a only, and let .item-main / .file-row
-   re-enable dragging explicitly. */
-/* High-Definition Vector & Image Anti-Aliasing */
 img,
-svg,
-canvas,
-video {
-  image-rendering: smooth;
-  shape-rendering: geometricPrecision;
-  text-rendering: optimizeLegibility;
-}
-
 svg {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-svg path,
-svg circle,
-svg line,
-svg polyline,
-svg rect,
-svg polygon {
-  vector-effect: non-scaling-stroke;
-}
-
-/* HD Anti-Aliased Curved Edges & Micro Surfaces */
-.blade,
-.item,
-.item-main,
-.filter-segmented-track,
-.filter-chip,
-.act,
-.icon-btn,
-.preview-flyout,
-.indicator-flyout,
-.settings-sheet,
-.pinned-count-badge,
-.thumb-wrap,
-.thumb,
-.kind-badge,
-.changelog-pill,
-.copy-curve-container,
-.bundle-stack-card,
-.style-card {
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-  -webkit-background-clip: padding-box;
-  background-clip: padding-box;
-}
-
-img,
-a {
   -webkit-user-drag: none;
-}
-
-/* Our draggable surfaces opt back into native dragging. */
-.item-main,
-.file-row {
-  -webkit-user-drag: element;
+  shape-rendering: geometricPrecision;
 }
 
 button {
@@ -117,9 +52,8 @@ button {
   cursor: pointer;
 }
 
-input {
-  font: inherit;
-  color: inherit;
+p {
+  margin: 0;
 }
 
 ::-webkit-scrollbar {
@@ -136,7 +70,7 @@ input {
   background: rgba(255, 255, 255, 0.22);
 }
 
-/* Respect OS reduced-motion when the user opts in via settings. */
+/* Reduce motion when the user opts in via settings. */
 :root[data-motion='reduce'] * {
   transition-duration: 0.01ms !important;
   animation-duration: 0.01ms !important;

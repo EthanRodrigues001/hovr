@@ -1,69 +1,8 @@
 /**
  * Shared domain types used by both the Electron main process and the renderer.
  *
- * Items are serialized in two places:
- *   - the on-disk index (JSON in userData)
- *   - the IPC payloads sent to the renderer
- * Images are stored as separate PNG files referenced by `imageId`, while the
- * renderer receives the bytes inline as a data URL so the UI never blocks on disk I/O.
+ * Usage-limit types live in `usage.ts`; notch geometry constants in `notch.ts`.
  */
-
-/** Maximum number of sub-items that may live in a single stack/bundle. */
-export const MAX_STACK = 10
-
-/** Discriminated union describing the payload of a clipboard item. */
-export type ItemData =
-  | { kind: 'text'; text: string; html?: string; isUrl: boolean; isColor?: boolean }
-  | { kind: 'image'; imageId: string; width: number; height: number; bytes: number; ext?: string }
-  | { kind: 'image-collection'; images: { imageId: string; width: number; height: number; bytes: number; ext?: string }[] }
-  | { kind: 'files'; paths: string[] }
-
-export type ItemKind = ItemData['kind']
-
-export type TypeFilter = 'all' | 'text' | 'links' | 'images' | 'files'
-
-/**
- * A single clipboard entry. `id` is stable across the lifetime of the entry;
- * it is used as the React key and the storage key for pinned/persisted items.
- */
-export interface ClipboardItem {
-  id: string
-  data: ItemData
-  /** Unix epoch ms of the moment the item was captured. */
-  capturedAt: number
-  /** Number of times this exact content has been captured. */
-  hitCount: number
-  /** Pinned items never scroll off and survive app restarts. */
-  pinned: boolean
-}
-
-/**
- * Display metadata for a single file inside a `files` bundle.
- * Computed by main from the path/extension + a stat() call; the internal
- * `ItemData.files` model stays a plain path list so drag/merge/split logic
- * is untouched, while the renderer gets what it needs to render richly.
- */
-export interface FileEntry {
-  name: string
-  ext: string
-  size: number
-  isImage: boolean
-  preview?: string
-}
-
-/** Payload sent over IPC: same as ClipboardItem but with inline image previews. */
-export interface ClipboardItemDto extends Omit<ClipboardItem, 'data'> {
-  data:
-  | { kind: 'text'; text: string; html?: string; isUrl: boolean; isColor?: boolean }
-  | { kind: 'image'; imageId: string; width: number; height: number; bytes: number; preview: string; ext?: string }
-  | { kind: 'image-collection'; images: { imageId: string; width: number; height: number; bytes: number; preview: string; ext?: string }[] }
-  | { kind: 'files'; paths: string[]; previews?: string[]; entries?: FileEntry[] }
-}
-
-/** Section the renderer groups items into. */
-export type ItemSection = 'pinned' | 'shelf'
-
-export type StickPosition = 'left' | 'right'
 
 export interface DisplayInfo {
   id: number
@@ -75,118 +14,53 @@ export interface DisplayInfo {
   resolution: string
 }
 
-/**
- * Request to begin a native OS drag-out of one item.
- *
- * `id` always identifies the source item. `paths` is an optional override that
- * narrows a `files` bundle to a single path (used when dragging one file out of
- * an expanded bundle). When omitted, main uses all of the item's content.
- */
-export interface DragRequest {
-  id: string
-  paths?: string[]
-  imageId?: string
-  splitPlacement?: 'before' | 'after'
-}
-
-/**
- * Outcome of a merge attempt. `reason` tells the renderer *why* it failed so it
- * can show a precise message (e.g. "collection full" vs "can't mix types").
- */
-export interface MergeResult {
-  ok: boolean
-  reason?: 'full' | 'incompatible' | 'notfound'
-  message?: string
-}
+/** What the collapsed notch shows. */
+export type CollapsedStyle = 'chips' | 'dots'
 
 export interface Settings {
-  /** Fraction of the screen height the hot zone occupies (0.2 - 0.6). */
-  hotZoneHeight: number
-  /** Physical thickness (in pixels) of the screen edge hover trigger. */
-  hotZoneWidth: number
-  /** Maximum number of unpinned history items kept. */
-  historyLimit: number
-  /** Fraction of the screen height the panel occupies (0.4 - 1.0). */
-  panelHeight: number
-  /** When true, newly captured items are not recorded. */
-  incognito: boolean
-  /** Start minimized when the OS logs in. */
+  /** Start with Windows. */
   launchAtLogin: boolean
-  /** Reduce motion for the panel animations. */
+  /** Reduce motion for the notch animations. */
   reduceMotion: boolean
-  /** When true, automatically clears unpinned items on device/app restart. */
-  /** When true, automatically clears unpinned items on device/app restart. */
-  clearUnpinnedOnRestart: boolean
-  /** Hours after which unpinned items are automatically purged (0 = Never). */
-  autoDeleteHours: number
-  /** UI visual style density ('modern' | 'compact'). */
-  uiStyle: 'modern' | 'compact'
-  /** Flag to track if the onboarding tutorial is completed. */
-  tutorialCompleted: boolean
-  stickPosition: StickPosition
-  stickDisplayId?: number
+  /** Collapsed pill: per-provider remaining % ("chips") or just status dots ("dots"). */
+  collapsedStyle: CollapsedStyle
   /**
-   * Persisted workArea geometry of the display chosen by the user.
-   * Used as a cross-reboot fuzzy-match fingerprint when the OS re-assigns
-   * numeric display IDs after a restart (Windows behaviour).
-   */
-  stickDisplayWorkArea?: { x: number; y: number; width: number; height: number }
-  /**
-   * DPI scale factor of the chosen display — used as a secondary discriminator
-   * when two displays share identical workArea geometry (e.g. dual same-res).
-   */
-  stickDisplayScaleFactor?: number
-  /**
-   * When true, restores the bouncy overshoot panel-open animation.
-   * Off by default because it requires extra GPU compositing work.
-   */
-  bounceAnimation: boolean
-  /**
-   * When true, automatically suppresses edge hover when a fullscreen game or app is active.
-   * On by default to prevent accidental opening during PC gameplay.
+   * When true, hovering is ignored while a fullscreen game or app is active so the
+   * notch never pops up over gameplay.
    */
   suppressInFullscreen: boolean
-  /** When true, shows the visual edge morph indicator on copy actions. Default: true. */
-  showCopyIndicator: boolean
-  /** Style variant of the copy indicator icon ('logo' | 'check' | 'copy' | 'sparkle'). Default: 'logo'. */
-  copyIndicatorStyle: 'logo' | 'check' | 'copy' | 'sparkle'
-  /** Vertical offset fraction along screen edge (0 = top, 0.5 = center, 1 = bottom). Default: 0.5. */
-  verticalOffset: number
-  /** Vertical alignment of the hover trigger strip relative to shelf ('top' | 'center' | 'bottom'). Default: 'center'. */
-  triggerAlignment?: 'top' | 'center' | 'bottom'
-  /** When true, subtly illuminates a beacon hint on the screen edge when touching the edge at a different position. Default: true. */
-  showEdgeLocationHint?: boolean
-  /** When true, plays tactile audio sound effects for sliders, buttons, and switches. Default: true. */
-  soundEffects?: boolean
-  /** Last version for which the user opened/viewed the What's New changelog panel. */
+  /** Display the notch lives on; unset = primary. */
+  stickDisplayId?: number
+  /**
+   * Persisted workArea geometry of the chosen display. Windows re-assigns numeric
+   * display ids across reboots, so this is the fuzzy-match fingerprint.
+   */
+  stickDisplayWorkArea?: { x: number; y: number; width: number; height: number }
+  /** DPI scale of the chosen display; tiebreaker for identical-geometry monitors. */
+  stickDisplayScaleFactor?: number
+  /** Provider ids the user switched off (not read, not shown). */
+  disabledProviders: string[]
+  /** Minutes between usage refreshes (1-60). */
+  usageRefreshMinutes: number
+  /**
+   * Price History in dollars using LiteLLM's public price list (one anonymous
+   * download a day, no account data). Off = token counts only.
+   */
+  showCostEstimates: boolean
+  /** Last version whose What's New the user opened. */
   lastSeenChangelogVersion?: string
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  hotZoneHeight: 0.25,
-  hotZoneWidth: 3,
-  historyLimit: 500,
-  panelHeight: 0.5,
-  incognito: false,
   launchAtLogin: true,
   reduceMotion: false,
-  clearUnpinnedOnRestart: false,
-  autoDeleteHours: 0,
-  uiStyle: 'modern',
-  tutorialCompleted: false,
-  stickPosition: 'left',
+  collapsedStyle: 'chips',
+  suppressInFullscreen: true,
   stickDisplayId: undefined,
   stickDisplayWorkArea: undefined,
   stickDisplayScaleFactor: undefined,
-  bounceAnimation: false,
-  suppressInFullscreen: true,
-  showCopyIndicator: true,
-  copyIndicatorStyle: 'logo',
-  verticalOffset: 0.5,
-  triggerAlignment: 'center',
-  showEdgeLocationHint: true,
-  soundEffects: true,
+  disabledProviders: [],
+  usageRefreshMinutes: 5,
+  showCostEstimates: true,
   lastSeenChangelogVersion: undefined
 }
-
-

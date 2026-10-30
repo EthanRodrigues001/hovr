@@ -1,48 +1,34 @@
 /**
  * Settings persistence.
  *
- * Settings are small (a single flat object) so a plain JSON file is plenty.
- * The store guards against partial/corrupt files by deep-merging onto the
- * defaults so a bad field never takes the whole app down.
+ * Settings are small (a single flat object) so a plain JSON file is plenty. Files
+ * written by older versions (or by hand) are sanitised on load: unknown keys are
+ * dropped and every field falls back to its default if missing or the wrong type.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { sanitize } from '../../shared/settingsSanitize'
 import { DEFAULT_SETTINGS, type Settings } from '../../shared/types'
 import { PATHS } from './paths'
 
 let cache: Settings | null = null
 
-function merge(base: Settings, patch: Partial<Settings>): Settings {
-  const out = { ...base, ...patch } as Settings
-  // Clamp the numeric slider into its valid range.
-  out.hotZoneHeight = Math.min(0.6, Math.max(0.2, out.hotZoneHeight))
-  out.historyLimit = Math.min(2000, Math.max(50, Math.round(out.historyLimit)))
-  out.autoDeleteHours = Math.max(0, Number(out.autoDeleteHours) || 0)
-  out.verticalOffset = Math.min(1.0, Math.max(0.0, typeof out.verticalOffset === 'number' ? out.verticalOffset : 0.5))
-  if (out.uiStyle !== 'modern' && out.uiStyle !== 'compact') {
-    out.uiStyle = 'modern'
-  }
-  if (out.triggerAlignment !== 'top' && out.triggerAlignment !== 'center' && out.triggerAlignment !== 'bottom') {
-    out.triggerAlignment = 'center'
-  }
-  return out
-}
-
 export function loadSettings(): Settings {
   if (cache) return cache
-  let file: Partial<Settings> = {}
+  let file: Partial<Record<keyof Settings, unknown>> = {}
   try {
     if (existsSync(PATHS.settingsFile())) {
-      file = JSON.parse(readFileSync(PATHS.settingsFile(), 'utf8')) as Partial<Settings>
+      const parsed: unknown = JSON.parse(readFileSync(PATHS.settingsFile(), 'utf8'))
+      if (typeof parsed === 'object' && parsed !== null) file = parsed as typeof file
     }
   } catch {
     file = {}
   }
-  cache = merge({ ...DEFAULT_SETTINGS }, file)
+  cache = sanitize({ ...DEFAULT_SETTINGS }, file)
   return cache
 }
 
 export function saveSettings(patch: Partial<Settings>): Settings {
-  const next = merge(loadSettings(), patch)
+  const next = sanitize(loadSettings(), patch)
   cache = next
   try {
     writeFileSync(PATHS.settingsFile(), JSON.stringify(next, null, 2), 'utf8')

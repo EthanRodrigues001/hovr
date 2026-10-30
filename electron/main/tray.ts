@@ -1,22 +1,29 @@
 /**
  * System tray icon + context menu.
  *
- * The panel has no taskbar button and no window chrome, so the tray is the
- * user's handle on the app: show/hide, toggle incognito, and quit. Menu item
- * state (checkmarks) is rebuilt every time the menu opens so it always reflects
- * current settings.
+ * The notch has no taskbar button and no window chrome, so the tray is the user's
+ * handle on the app: show/hide, settings, refresh, which display the notch lives
+ * on, and quit. The menu is rebuilt every time it opens so checkmarks and the
+ * display list are always current.
  */
-import { Menu, Tray, app, nativeImage, Notification, screen } from 'electron'
+import { Menu, Tray, app, nativeImage, screen } from 'electron'
 import { existsSync } from 'node:fs'
 import { PATHS } from '../store/paths'
 import { loadSettings, saveSettings } from '../store/settings'
-import { getMainWindow, setVisible, repositionWindow, getDisplayListOptions, registerWindowRepositionListener, popUpAndRetract } from './window'
-import type { StickPosition } from '../../shared/types'
+import {
+  getDisplayListOptions,
+  popUpAndRetract,
+  registerWindowRepositionListener,
+  repositionWindow,
+  setVisible
+} from './window'
 import { pushState } from './state'
+import { refreshUsage } from './usageService'
 
 let tray: Tray | null = null
+let rebuildMenu: (() => void) | null = null
 
-/** Build a tiny monochrome tray icon if no on-disk icon exists (first run). */
+/** A tiny placeholder if no icon exists on disk (first run / dev). */
 function fallbackIcon(): Electron.NativeImage {
   // 16x16 transparent PNG with a centered accent dot.
   const png = Buffer.from(
@@ -30,44 +37,23 @@ function fallbackIcon(): Electron.NativeImage {
 
 export function createTray(): Tray {
   const iconPath = PATHS.trayIcon()
-  let image: Electron.NativeImage
-
-  if (existsSync(iconPath)) {
-    // Load and resize to exactly 32x32. Windows system tray renders icons at 16x16
-    // logical pixels but uses 32x32 physical pixels on 2x DPI displays.
-    // Using a single 32x32 image with no scaleFactor trickery is the most reliable
-    // approach — the OS scales it automatically.
-    image = nativeImage.createFromPath(iconPath).resize({ width: 32, height: 32, quality: 'best' })
-  } else {
-    image = fallbackIcon()
-  }
+  // Windows draws tray icons at 16 logical px (32 physical on 2x), so hand it 32.
+  const image = existsSync(iconPath)
+    ? nativeImage.createFromPath(iconPath).resize({ width: 32, height: 32, quality: 'best' })
+    : fallbackIcon()
   tray = new Tray(image)
-  tray.setToolTip('Edge-Drop')
-
-  // Show welcome notification on first run
-  if (!existsSync(PATHS.indexFile())) {
-    try {
-      if (Notification.isSupported()) {
-        new Notification({
-          title: 'Edge-Drop Clipboard Shelf',
-          body: 'Hover against the middle-left screen edge, or press Alt+C to slide open your shelf.',
-          icon: PATHS.icon()
-        }).show()
-      }
-    } catch { /* ignore */ }
-  }
+  tray.setToolTip('HOVR')
 
   function buildDisplaySubmenu(): Electron.MenuItemConstructorOptions[] {
-    const options = getDisplayListOptions()
-    return options.map((d) => ({
+    return getDisplayListOptions().map((d) => ({
       label: d.label,
       type: 'radio' as const,
       checked: d.isCurrent,
       click: () => {
-        // Persist ID + geometry so the next reboot can fuzzy-match via workArea.
+        // Persist id + geometry so the next reboot can fuzzy-match via workArea.
         const next = saveSettings({
           stickDisplayId: d.id,
-          stickDisplayWorkArea: d.bounds,
+          stickDisplayWorkArea: d.workArea,
           stickDisplayScaleFactor: d.scaleFactor
         })
         pushState.settings(next)
@@ -78,109 +64,63 @@ export function createTray(): Tray {
     }))
   }
 
-  function buildStickSubmenu(current: StickPosition): Electron.MenuItemConstructorOptions[] {
-    return (['left', 'right'] as StickPosition[]).map((pos) => ({
-      label: pos.charAt(0).toUpperCase() + pos.slice(1),
-      type: 'radio' as const,
-      checked: current === pos,
-      click: () => {
-        const next = saveSettings({ stickPosition: pos })
-        pushState.settings(next)
-        repositionWindow()
-        popUpAndRetract(1500)
-        rebuild()
-      }
-    }))
-  }
-
   const rebuild = () => {
     const settings = loadSettings()
-    const menu = Menu.buildFromTemplate([
-      {
-        label: 'Show Clipboard',
-        click: () => {
-          console.log('[Main] Context menu "Show Clipboard" clicked')
-          setVisible(true)
-          getMainWindow()?.focus()
-          pushState.togglePanel()
-        }
-      },
-      {
-        label: 'Settings',
-        click: () => {
-          console.log('[Main] Context menu "Settings" clicked')
-          setVisible(true)
-          getMainWindow()?.focus()
-          pushState.openSettings()
-        }
-      },
-      { type: 'separator' },
-      {
-        label: 'Incognito (pause capture)',
-        type: 'checkbox',
-        checked: settings.incognito,
-        click: (item) => {
-          const next = saveSettings({ incognito: item.checked })
-          pushState.settings(next)
-          applyIncognito(next.incognito)
-          rebuild()
-        }
-      },
-      { type: 'separator' },
-      {
-        label: 'Stick to',
-        submenu: buildStickSubmenu(settings.stickPosition)
-      },
-      {
-        label: 'Display',
-        submenu: buildDisplaySubmenu()
-      },
-      { type: 'separator' },
-      {
-        label: 'Quit Edge-Drop',
-        click: () => {
-          app.quit()
-        }
-      }
-    ])
-    tray?.setContextMenu(menu)
+    tray?.setContextMenu(
+      Menu.buildFromTemplate([
+        {
+          label: 'Show usage',
+          click: () => {
+            setVisible(true)
+            pushState.togglePanel()
+          }
+        },
+        {
+          label: 'Settings',
+          click: () => {
+            setVisible(true)
+            pushState.openSettings()
+          }
+        },
+        { label: 'Refresh now', click: () => void refreshUsage() },
+        { type: 'separator' },
+        {
+          label: 'Ignore hover in fullscreen apps',
+          type: 'checkbox',
+          checked: settings.suppressInFullscreen,
+          click: (item) => {
+            pushState.settings(saveSettings({ suppressInFullscreen: item.checked }))
+            rebuild()
+          }
+        },
+        { label: 'Display', submenu: buildDisplaySubmenu() },
+        { type: 'separator' },
+        { label: 'Quit HOVR', click: () => app.quit() }
+      ])
+    )
   }
 
   tray.on('click', () => {
-    console.log('[Main] Tray icon left-clicked')
-    const win = getMainWindow()
-    if (!win) return
     setVisible(true)
     pushState.togglePanel()
   })
 
-  // Rebuild menu dynamically right before showing to ensure displays & checkmarks are 100% current.
+  // Rebuild right before showing so displays and checkmarks are current.
   tray.on('right-click', () => {
     rebuild()
     tray?.popUpContextMenu()
   })
 
-  // Listen for display changes to keep tray context menu updated in real-time.
   screen.on('display-added', rebuild)
   screen.on('display-removed', rebuild)
   screen.on('display-metrics-changed', rebuild)
-
   registerWindowRepositionListener(rebuild)
-  trayMenuRebuilder = rebuild
+
+  rebuildMenu = rebuild
   rebuild()
   return tray
 }
 
-let trayMenuRebuilder: (() => void) | null = null
 export function rebuildTrayMenu(): void {
-  trayMenuRebuilder?.()
-}
-
-/** Reflect incognito toggle into the watcher without the renderer round-trip. */
-let incognitoApply: ((v: boolean) => void) | null = null
-export function registerIncognitoApplier(fn: (v: boolean) => void): void {
-  incognitoApply = fn
-}
-function applyIncognito(v: boolean): void {
-  incognitoApply?.(v)
+  rebuildMenu?.()
 }

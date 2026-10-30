@@ -1,8 +1,8 @@
 {
-  "name": "edge-drop",
-  "version": "0.2.2",
-  "description": "Edge-Drop — a clipboard manager that lives on the left edge of your screen and expands on hover.",
-  "author": "Edge-Drop",
+  "name": "hovr",
+  "version": "0.1.0",
+  "description": "hovr: a notch at the top of your screen showing the usage limits of your AI coding tools.",
+  "author": "Ethan Rodrigues",
   "license": "Apache-2.0",
   "private": true,
   "main": "out/main/index.js",
@@ -11,18 +11,17 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "build:github": "npm run build && electron-builder --win nsis -c.extraMetadata.buildTarget=github",
-    "build:store": "npm run build && electron-builder --win appx -c.extraMetadata.buildTarget=store",
-    "build:msix": "npm run build && electron-builder --win appx -c.extraMetadata.buildTarget=store",
     "build:win": "npm run build:github",
     "package": "npm run build:github",
     "preview": "electron-vite preview",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
-    "typecheck": "npm run typecheck:node && npm run typecheck:web"
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "test": "vitest run"
   },
   "build": {
-    "appId": "com.edgedrop.app",
-    "productName": "Edge-Drop",
+    "appId": "com.hovr.app",
+    "productName": "HOVR",
     "directories": {
       "output": "dist",
       "buildResources": "resources"
@@ -32,21 +31,10 @@
       "resources/**/*",
       "package.json"
     ],
-    "publish": {
-      "provider": "github",
-      "owner": "Deepender25",
-      "repo": "Edge-Drop"
-    },
     "win": {
       "target": [
         {
           "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "appx",
           "arch": [
             "x64"
           ]
@@ -58,17 +46,10 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "shortcutName": "Edge-Drop",
+      "shortcutName": "HOVR",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "artifactName": "Edge-Drop-Setup-${version}.${ext}"
-    },
-    "appx": {
-      "identityName": "Deepender.EdgeDrop",
-      "publisher": "CN=55FECDC4-7144-4A41-98FC-056C003F76FD",
-      "publisherDisplayName": "Deepender",
-      "applicationId": "EdgeDrop",
-      "displayName": "Edge Drop"
+      "artifactName": "HOVR-Setup-${version}.${ext}"
     }
   },
   "devDependencies": {

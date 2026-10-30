@@ -9,49 +9,17 @@
  *   - `Renderer -> Main` calls (invoke/handle) are listed in `InvokeMap`.
  *   - `Main -> Renderer` events (send/on) are listed in `EventMap`.
  */
-import type { ClipboardItemDto, DragRequest, MergeResult, Settings } from './types'
+import type { Settings } from './types'
+import type { HistoryReport } from './history'
+import type { UsageState } from './usage'
 
 /* ------------------------------------------------------------------ */
 /* Renderer -> Main  (ipcMain.handle / ipcRenderer.invoke)            */
 /* ------------------------------------------------------------------ */
 
 export interface InvokeMap {
-  /** Returns the full current item list + settings on startup. */
-  'state:load': { args: []; result: { items: ClipboardItemDto[]; settings: Settings; version: string } }
-
-  /** Set an item's pinned state. */
-  'item:set-pinned': { args: [id: string, pinned: boolean]; result: ClipboardItemDto[] }
-
-  /** Delete a single item (and its image file if present). */
-  'item:delete': { args: [id: string]; result: ClipboardItemDto[] }
-
-  /** Delete every unpinned item. */
-  'item:clear': { args: []; result: ClipboardItemDto[] }
-
-  /** Remove a specific sub-item from a bundle. */
-  'item:remove-subitem': { args: [req: DragRequest]; result: boolean }
-
-  /** Copy an item back onto the system clipboard. */
-  'item:copy': { args: [id: string]; result: boolean }
-
-  /** Copy a single sub-item (one file of a bundle, or one image of a
-   *  collection) onto the system clipboard. */
-  'item:copy-subitem': { args: [req: DragRequest]; result: boolean }
-
-  /** Copy an item and paste it directly into the active application. */
-  'item:paste': { args: [id: string]; result: boolean }
-
-  /** Copy a sub-item and paste it directly into the active application. */
-  'item:paste-subitem': { args: [req: DragRequest]; result: boolean }
-
-  /** Add local file paths dragged into the shelf. */
-  'item:add-files': { args: [paths: string[]]; result: ClipboardItemDto[] }
-
-  /** Merge an item into another. Returns why it failed (full / incompatible). */
-  'item:merge': { args: [sourceId: string, targetId: string]; result: MergeResult }
-
-  /** Split a sub-item out of a bundle into a new standalone item. */
-  'item:split': { args: [req: DragRequest]; result: boolean }
+  /** Returns persisted settings + the app version on startup. */
+  'state:load': { args: []; result: { settings: Settings; version: string } }
 
   /** Update a persisted setting. */
   'settings:update': { args: [patch: Partial<Settings>]; result: Settings }
@@ -59,32 +27,20 @@ export interface InvokeMap {
   /** Toggle whether the window is interactive (mouse-ignore). */
   'window:set-interactive': { args: [interactive: boolean]; result: void }
 
-  /** Toggle whether the flyout preview is active (widens the window). */
-  'window:set-preview-mode': { args: [active: boolean]; result: void }
-
-  /** Minimize the window (used by Onboarding). */
-  'window:minimize': { args: []; result: void }
-
   /** Trigger a download of the already-available update and quit-and-install. */
   'app:install-update': { args: []; result: void }
 
   /** Quit the application process. */
   'app:quit': { args: []; result: void }
 
-  /** Reveal a file in native File Explorer / Finder. */
-  'file:reveal': { args: [path: string]; result: boolean }
+  /** Latest usage snapshot per provider plus provider statuses. */
+  'usage:get': { args: []; result: UsageState }
 
-  /** Get full release notes history from GitHub API (or cached/static fallback). */
-  'app:get-releases': {
-    args: []
-    result: Array<{
-      version: string
-      date: string
-      isLatest: boolean
-      summary: string
-      highlights: Array<{ title: string; description: string }>
-    }>
-  }
+  /** Force a refresh of every provider; resolves once all reads settle. */
+  'usage:refresh': { args: []; result: UsageState }
+
+  /** Token + cost history from local session logs, for the last `days` days. */
+  'history:get': { args: [days: number]; result: HistoryReport }
 
   /** Get the list of connected displays. */
   'displays:list': { args: []; result: import('./types').DisplayInfo[] }
@@ -95,60 +51,27 @@ export interface InvokeMap {
 /* ------------------------------------------------------------------ */
 
 export interface EventMap {
-  /** Full new item list whenever the history changes. */
-  'state:items': [items: ClipboardItemDto[]]
   /** Settings changed (e.g. from the tray menu). */
   'state:settings': [settings: Settings]
-  /** Toggle the panel open/closed from the main process (e.g. tray). */
+  /** Open/close the notch from the main process (shortcut, tray). */
   'window:toggle': [open?: boolean]
-  /** Open the panel directly to settings from the main process (e.g. tray). */
+  /** Open the notch straight to Settings (tray). */
   'window:open-settings': []
-  /** Fired when an OS drag initiated by the app has completed. */
-  'item:drag-end': []
-  /** Tutorial step sync */
-  'tutorial:step': [step: number]
-  /** Internal drop triggered by the main process when startDrag ends inside the window */
-  'item:internal-drop': [pos: { x: number; y: number }]
-  /**
-   * Transient user-facing notice (e.g. "Stack is full (10 max)"). The renderer
-   * shows it as a toast; `id` lets it dedupe/dismiss.
-   */
+  /** Usage bars or provider statuses changed. */
+  'usage:update': [state: UsageState]
+  /** Transient user-facing notice, shown as a toast. */
   'ui:toast': [toast: { id: string; message: string; tone: 'info' | 'error' }]
   /** Fired by electron-updater when a new update is available for GitHub builds. */
   'app:update-available': [info: { version: string }]
   /** Fired by electron-updater when the update has been fully downloaded and is ready to install. */
   'app:update-downloaded': [info: { version: string }]
   /**
-   * Main-process cursor poll signals: fired when the cursor enters/leaves
-   * the screen-edge hot zone. The renderer uses this to open/close the panel
-   * instead of relying on `forward:true` pointermove (which is unreliable on
-   * Windows transparent windows).
-   * payload: { x, y, inEdge, inZone }
+   * Streamed by the main-process cursor poll while the cursor is near the notch
+   * window (or the notch is open), and once more when it leaves. `x`/`y` are
+   * relative to the window's top-left. `forward:true` pointer events are unreliable
+   * on Windows transparent windows, which is why this exists.
    */
-  'window:cursor-edge': [data: {
-    x: number
-    y: number
-    inEdge: boolean
-    inZone: boolean
-    stickPosition: import('./types').StickPosition
-    displayWidth: number
-    displayHeight: number
-  }]
-}
-
-/* ------------------------------------------------------------------ */
-/* Renderer -> Main  (ipcMain.on / ipcRenderer.send) — fire & forget  */
-/* ------------------------------------------------------------------ */
-//
-// Used for time-critical, one-way gestures where the renderer must not block
-// on a round-trip. The canonical example is native drag-out: Electron's
-// `startDrag` only works when called synchronously from the `dragstart` event,
-// so the renderer `send`s the request and main calls `event.sender.startDrag`.
-export interface SendMap {
-  /** Begin a native OS drag of an item (or one file of a bundle) out of the app. */
-  'item:start-drag': { args: [req: DragRequest] }
-  /** Synchronize tutorial step */
-  'tutorial:set-step': { args: [step: number] }
+  'window:cursor': [data: { x: number; y: number; width: number; height: number }]
 }
 
 /* ------------------------------------------------------------------ */
@@ -158,11 +81,9 @@ export interface SendMap {
 /** Typed keyof helpers so channel names can never drift. */
 export const INVOKE_CHANNELS = Object.keys({} as InvokeMap) as (keyof InvokeMap)[]
 export const EVENT_CHANNELS = Object.keys({} as EventMap) as (keyof EventMap)[]
-export const SEND_CHANNELS = Object.keys({} as SendMap) as (keyof SendMap)[]
 
 export type InvokeChannel = keyof InvokeMap
 export type EventChannel = keyof EventMap
-export type SendChannel = keyof SendMap
 
 /** Argument tuple for an invoke channel. */
 export type InvokeArgs<C extends InvokeChannel> = InvokeMap[C]['args']
@@ -170,5 +91,3 @@ export type InvokeArgs<C extends InvokeChannel> = InvokeMap[C]['args']
 export type InvokeResult<C extends InvokeChannel> = InvokeMap[C]['result']
 /** Argument tuple for an event channel. */
 export type EventArgs<C extends EventChannel> = EventMap[C]
-/** Argument tuple for a fire-and-forget send channel. */
-export type SendArgs<C extends SendChannel> = SendMap[C]['args']

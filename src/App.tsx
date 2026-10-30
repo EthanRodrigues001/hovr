@@ -1,101 +1,36 @@
 /**
- * App — root component.
+ * App: root component.
  *
- * Wires up:
- *   - hydration (load items + settings on mount)
- *   - main->renderer event subscriptions (items/settings pushed from main)
- *   - theme application (accent + reduce-motion)
- *   - the edge-hover controller (open/close the blade)
- *   - the Panel itself
+ * Hydrates settings + usage from the main process, subscribes to the pushed
+ * updates, drives the hover behaviour, and renders the notch.
  */
 import { useEffect } from 'react'
-import { Panel } from './components/Panel'
-import { useStore } from './store/appStore'
+import { Notch } from './components/Notch'
+import { useNotchHover } from './hooks/useNotchHover'
 import { edge } from './lib/edge'
 import { applyReduceMotion } from './lib/theme'
-import { useEdgeHover } from './hooks/useEdgeHover'
+import { useStore } from './store/appStore'
 
 export default function App() {
-  const hydrate = useStore((s) => s.hydrate)
-  const setItems = useStore((s) => s.setItems)
-  const setSettings = useStore((s) => s.setSettings)
-  const pushToast = useStore((s) => s.pushToast)
-  const settings = useStore((s) => s.settings)
+  const reduceMotion = useStore((s) => s.settings.reduceMotion)
 
-  // Drive the edge open/close behavior.
-  useEdgeHover()
+  useNotchHover()
 
-  // Hydrate once + subscribe to pushed updates.
   useEffect(() => {
+    const { hydrate, setSettings, setUsageState, pushToast, setUpdateAvailable, setUpdateDownloaded } =
+      useStore.getState()
     void hydrate()
-    const offItems = edge.onItems((items) => setItems(items))
-    const offSettings = edge.onSettings((next) => setSettings(next))
-    const offToast = edge.onToast((t) => pushToast(t))
-    const offToggle = edge.onToggle((forceOpen) => {
-      const next = forceOpen !== undefined ? forceOpen : !useStore.getState().open
-      if (!next) {
-        const state = useStore.getState()
-        // If the indicator style flyout is open, let its exit spring play first
-        // before collapsing the main panel — same sequencing as useEdgeHover's
-        // closePanel(). Without this, both animate simultaneously and it looks broken.
-        if (state.styleFlyoutOpen) {
-          state.setStyleFlyoutOpen(false)
-          window.setTimeout(() => {
-            const s = useStore.getState()
-            if (s.previewItemId) {
-              s.setPreviewItemId(null)
-              edge.setInteractive(false)
-              window.setTimeout(() => { useStore.getState().setOpen(false) }, 240)
-            } else {
-              s.setOpen(false)
-              edge.setInteractive(false)
-            }
-          }, 300)
-        } else if (state.previewItemId) {
-          state.setPreviewItemId(null)
-          edge.setInteractive(false)
-          window.setTimeout(() => {
-            useStore.getState().setOpen(false)
-          }, 240)
-        } else {
-          state.setOpen(false)
-          edge.setInteractive(false)
-        }
-      } else {
-        useStore.getState().setOpen(next)
-        edge.setInteractive(next)
-      }
-    })
-    const offOpenSettings = edge.onOpenSettings(() => {
-      useStore.getState().setOpen(true)
-      useStore.getState().setSettingsOpen(true)
-      edge.setInteractive(true)
-    })
-    const offTutorialStep = edge.onTutorialStep((step) => {
-      useStore.getState().setTutorialStep(step)
-    })
-    const offUpdateAvailable = edge.onUpdateAvailable((info) => {
-      useStore.getState().setUpdateAvailable(info)
-    })
-    const offUpdateDownloaded = edge.onUpdateDownloaded((info) => {
-      useStore.getState().setUpdateDownloaded(info)
-    })
-    return () => {
-      offItems()
-      offSettings()
-      offToast()
-      offToggle()
-      offOpenSettings()
-      offTutorialStep()
-      offUpdateAvailable()
-      offUpdateDownloaded()
-    }
-  }, [hydrate, setItems, setSettings, pushToast])
+    const offs = [
+      edge.onSettings(setSettings),
+      edge.onUsage(setUsageState),
+      edge.onToast(pushToast),
+      edge.onUpdateAvailable(setUpdateAvailable),
+      edge.onUpdateDownloaded(setUpdateDownloaded)
+    ]
+    return () => offs.forEach((off) => off())
+  }, [])
 
-  // Apply theme whenever settings change.
-  useEffect(() => {
-    applyReduceMotion(settings.reduceMotion)
-  }, [settings.reduceMotion])
+  useEffect(() => applyReduceMotion(reduceMotion), [reduceMotion])
 
-  return <Panel />
+  return <Notch />
 }

@@ -1,17 +1,14 @@
 /**
  * Renderer state store (Zustand).
  *
- * Holds the item list + settings and exposes thin actions that call the bridge
- * and update local state optimistically where it's safe. The main process is
- * always the source of truth; it pushes a fresh DTO list after every mutation,
- * so we mostly just *apply* what it sends us.
+ * The main process is the source of truth for settings and usage; the renderer
+ * mostly applies what it is pushed and keeps view state (open, which view/tab).
  */
 import { create } from 'zustand'
 import { edge } from '../lib/edge'
-import type { ClipboardItemDto, Settings, DragRequest } from '../../shared/types'
+import type { Settings } from '../../shared/types'
 import { DEFAULT_SETTINGS } from '../../shared/types'
-
-let flareTimer: ReturnType<typeof setTimeout> | null = null
+import type { ProviderId, ProviderStatus, UsageLimits, UsageState } from '../../shared/usage'
 
 /** A transient user-facing notice shown as a toast. */
 export interface ToastMsg {
@@ -20,267 +17,103 @@ export interface ToastMsg {
   tone: 'info' | 'error'
 }
 
+export type View = 'usage' | 'settings'
+export type SettingsTab = 'providers' | 'history' | 'general' | 'about'
+
 interface AppState {
-  items: ClipboardItemDto[]
   settings: Settings
+  version: string
   /** True until the first `state:load` resolves. */
   hydrated: boolean
-  /** Free-text search filter (UI-only state). */
-  query: string
-  typeFilter: import('../../shared/types').TypeFilter
-  setTypeFilter: (filter: import('../../shared/types').TypeFilter) => void
-  /** Whether the panel blade is expanded. */
+
+  usage: Partial<Record<ProviderId, UsageLimits>>
+  providers: ProviderStatus[]
+  /** True while a manual refresh is in flight. */
+  refreshing: boolean
+
+  /** Whether the notch is expanded. */
   open: boolean
-  /** Settings sheet visibility. */
-  settingsOpen: boolean
-  /** Active view mode within settings ('main' | 'changelog'). */
-  settingsSubView: 'main' | 'changelog'
-  setSettingsSubView: (subView: 'main' | 'changelog') => void
-  /** True while an OS file drag is hovering the panel (prevents premature close). */
-  dragActive: boolean
-  /** True if the active drag originated from within the app itself. Stores the drag request (which item/sub-item). */
-  internalDragReq: import('../../shared/types').DragRequest | null
-  /** Active toasts (auto-dismissed after a short delay). */
+  view: View
+  settingsTab: SettingsTab
+
   toasts: ToastMsg[]
-  tutorialStep: number
-  currentVersion: string
-  updateInfo: { hasUpdate: boolean; latestVersion: string; downloaded: boolean } | null
-  /** Item ID currently being previewed in the flyout. */
-  previewItemId: string | null
-  previewItemRect: { y: number; height: number } | null
+  updateInfo: { latestVersion: string; downloaded: boolean } | null
 
-  sliderActive: boolean
-  sliderReleasedTime: number
-  setSliderActive: (active: boolean) => void
-  notifyPositionChanged: () => void
-  resetPositionChangedTime: () => void
-  edgeHintActive: boolean
-  setEdgeHintActive: (active: boolean) => void
-
-  /* hydration + sync */
   hydrate: () => Promise<void>
-  setUpdateAvailable: (info: { version: string }) => void
-  setUpdateDownloaded: (info: { version: string }) => void
-  installUpdate: () => Promise<void>
-  setItems: (items: ClipboardItemDto[]) => void
   setSettings: (next: Settings) => void
+  patchSettings: (patch: Partial<Settings>) => Promise<void>
+  setUsageState: (state: UsageState) => void
+  refresh: () => Promise<void>
 
-  /* UI */
-  setQuery: (q: string) => void
   setOpen: (open: boolean) => void
-  setSettingsOpen: (open: boolean) => void
-  setDragActive: (active: boolean) => void
-  setInternalDragReq: (req: import('../../shared/types').DragRequest | null) => void
-  setPreviewItemId: (id: string | null, rect?: { y: number; height: number }) => void
-  styleFlyoutOpen: boolean
-  setStyleFlyoutOpen: (open: boolean) => void
-  previewFlyoutRect: { top: number; bottom: number } | null
-  setPreviewFlyoutRect: (rect: { top: number; bottom: number } | null) => void
-  copyFlareActive: boolean
-  flareKey: number
-  triggerCopyFlare: () => void
+  openSettings: (tab?: SettingsTab) => void
+  showUsage: () => void
+  setSettingsTab: (tab: SettingsTab) => void
 
-  /* toasts */
   pushToast: (toast: ToastMsg) => void
   dismissToast: (id: string) => void
 
-  /* mutations (delegate to main) */
-  togglePin: (id: string, pinned: boolean) => Promise<void>
-  remove: (id: string) => Promise<void>
-  clear: () => Promise<void>
-  copy: (id: string) => Promise<void>
-  paste: (id: string) => Promise<void>
-  pasteSubitem: (req: DragRequest) => Promise<void>
-  patchSettings: (patch: Partial<Settings>) => Promise<void>
-  setTutorialStep: (step: number) => void
+  setUpdateAvailable: (info: { version: string }) => void
+  setUpdateDownloaded: (info: { version: string }) => void
+  installUpdate: () => Promise<void>
 }
 
+const TOAST_MS = 3500
+
 export const useStore = create<AppState>((set, get) => ({
-  items: [],
   settings: { ...DEFAULT_SETTINGS },
+  version: '',
   hydrated: false,
-  query: '',
-  typeFilter: 'all',
-  setTypeFilter: (typeFilter) => set({ typeFilter }),
+
+  usage: {},
+  providers: [],
+  refreshing: false,
+
   open: false,
-  settingsOpen: false,
-  settingsSubView: 'main',
-  setSettingsSubView: (subView) => set({ settingsSubView: subView }),
-  dragActive: false,
-  internalDragReq: null,
+  view: 'usage',
+  settingsTab: 'providers',
+
   toasts: [],
-  tutorialStep: 0,
-  currentVersion: '',
   updateInfo: null,
-  previewItemId: null,
-  previewItemRect: null,
-  sliderActive: false,
-  sliderReleasedTime: 0,
-  setSliderActive: (active) => set({
-    sliderActive: active,
-    sliderReleasedTime: active ? 0 : Date.now()
-  }),
-  notifyPositionChanged: () => set({ sliderReleasedTime: Date.now() }),
-  resetPositionChangedTime: () => set({ sliderReleasedTime: 0 }),
-  edgeHintActive: false,
-  setEdgeHintActive: (active) => set({ edgeHintActive: active }),
-  styleFlyoutOpen: false,
-  setStyleFlyoutOpen: (open) => {
-    set({ styleFlyoutOpen: open, ...(open ? {} : { previewFlyoutRect: null }) })
-    if (open) {
-      edge.setPreviewMode(true)
-    }
-    // NOTE: Do NOT call edge.setPreviewMode(false) here when closing.
-    // If we do, Electron immediately shrinks the window, cutting the flyout exit
-    // spring in half (the 25%/75% split the user sees). Instead, IndicatorStyleFlyout's
-    // AnimatePresence.onExitComplete callback is the one that calls setPreviewMode(false)
-    // after the exit animation has fully settled.
-  },
-  copyFlareActive: false,
-  flareKey: 0,
 
   async hydrate() {
-    const { items, settings, version } = await edge.loadState()
-    set({ 
-      items, 
-      settings, 
-      currentVersion: version,
-      hydrated: true
-    })
+    const [{ settings, version }, usage] = await Promise.all([edge.loadState(), edge.getUsage()])
+    set({ settings, version, usage: usage.usage, providers: usage.providers, hydrated: true })
   },
 
-  setUpdateAvailable: (info) => {
-    set({
-      updateInfo: {
-        hasUpdate: true,
-        latestVersion: info.version,
-        downloaded: false
-      }
-    })
-  },
-
-  setUpdateDownloaded: (info) => {
-    set({
-      updateInfo: {
-        hasUpdate: true,
-        latestVersion: info.version,
-        downloaded: true
-      }
-    })
-  },
-
-  async installUpdate() {
-    await edge.installUpdate()
-  },
-
-  setItems: (items) => {
-    const prevItems = get().items
-    const prevTop = prevItems.length > 0 ? prevItems[0] : null
-    const newTop = items.length > 0 ? items[0] : null
-
-    if (get().hydrated && prevTop && newTop) {
-      if (
-        newTop.id !== prevTop.id ||
-        newTop.capturedAt !== prevTop.capturedAt ||
-        newTop.hitCount !== prevTop.hitCount
-      ) {
-        console.log('[appStore] Top item copied or re-copied! Triggering sine-curve copy flare for:', newTop.id)
-        get().triggerCopyFlare()
-      }
-    }
-    set({ items })
-  },
   setSettings: (next) => set({ settings: next }),
 
-  setQuery: (query) => set({ query }),
-  setOpen: (open) => {
-    set({ open })
-    if (!open) {
-      // NOTE: Do NOT reset styleFlyoutOpen here — closePanel() handles the
-      // sequencing so the flyout exit animation completes before the panel closes.
-      // Only reset previewItemId so the normal preview flyout clears correctly.
-      set({ previewItemId: null, previewItemRect: null })
-      edge.setPreviewMode(false)
+  async patchSettings(patch) {
+    // Optimistic: the UI reflects the change immediately; main's reply is authoritative.
+    set((s) => ({ settings: { ...s.settings, ...patch } }))
+    set({ settings: await edge.updateSettings(patch) })
+  },
+
+  setUsageState: (state) => set({ usage: state.usage, providers: state.providers }),
+
+  async refresh() {
+    if (get().refreshing) return
+    set({ refreshing: true })
+    try {
+      const state = await edge.refreshUsage()
+      set({ usage: state.usage, providers: state.providers })
+    } finally {
+      set({ refreshing: false })
     }
   },
-  setSettingsOpen: (settingsOpen) => set({ settingsOpen, settingsSubView: 'main' }),
-  setDragActive: (dragActive) => set({ dragActive }),
-  setInternalDragReq: (internalDragReq) => {
-    if (internalDragReq === null) {
-      set({ internalDragReq: null, dragActive: false })
-    } else {
-      set({ internalDragReq })
-    }
-    edge.setInternalDrag(!!internalDragReq)
-  },
-  previewFlyoutRect: null,
-  setPreviewFlyoutRect: (rect) => set({ previewFlyoutRect: rect }),
-  setPreviewItemId: (id, rect) => {
-    set({ previewItemId: id, previewItemRect: rect || null, ...(id ? {} : { previewFlyoutRect: null }) })
-    if (id) {
-      edge.setPreviewMode(true)
-    }
-  },
-  triggerCopyFlare: () => {
-    if (get().settings.showCopyIndicator === false) return
-    if (flareTimer) clearTimeout(flareTimer)
-    set({ copyFlareActive: true, flareKey: Date.now() })
-    flareTimer = setTimeout(() => {
-      set({ copyFlareActive: false })
-      flareTimer = null
-    }, 1400)
-  },
+
+  setOpen: (open) => set(open ? { open } : { open, view: 'usage' }),
+  openSettings: (tab) => set({ open: true, view: 'settings', ...(tab ? { settingsTab: tab } : {}) }),
+  showUsage: () => set({ view: 'usage' }),
+  setSettingsTab: (settingsTab) => set({ settingsTab }),
 
   pushToast: (toast) => {
-    set({ toasts: [...get().toasts, toast] })
-    // Auto-dismiss after 2.6s. Errors linger slightly longer for readability.
-    const ttl = toast.tone === 'error' ? 3400 : 2600
-    window.setTimeout(() => get().dismissToast(toast.id), ttl)
+    set((s) => ({ toasts: [...s.toasts.filter((t) => t.id !== toast.id), toast] }))
+    setTimeout(() => get().dismissToast(toast.id), TOAST_MS)
   },
+  dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 
-  dismissToast: (id) => {
-    set({ toasts: get().toasts.filter((t) => t.id !== id) })
-  },
-
-  async togglePin(id, pinned) {
-    // Optimistic: flip locally, then let the pushed list confirm.
-    set({
-      items: get().items.map((it) => (it.id === id ? { ...it, pinned } : it))
-    })
-    const items = await edge.setPinned(id, pinned)
-    set({ items })
-  },
-
-  async remove(id) {
-    set({ items: get().items.filter((it) => it.id !== id) })
-    const items = await edge.deleteItem(id)
-    set({ items })
-  },
-
-  async clear() {
-    const items = await edge.clearItems()
-    set({ items })
-  },
-
-  async copy(id) {
-    await edge.copyItem(id)
-  },
-
-  async paste(id) {
-    await edge.pasteItem(id)
-  },
-
-  async pasteSubitem(req) {
-    await edge.pasteSubitem(req)
-  },
-
-  async patchSettings(patch) {
-    const next = await edge.updateSettings(patch)
-    set({ settings: next })
-  },
-
-  setTutorialStep: (step) => {
-    set({ tutorialStep: step })
-    edge.broadcastTutorialStep(step)
-  }
+  setUpdateAvailable: (info) => set({ updateInfo: { latestVersion: info.version, downloaded: false } }),
+  setUpdateDownloaded: (info) => set({ updateInfo: { latestVersion: info.version, downloaded: true } }),
+  installUpdate: () => edge.installUpdate()
 }))

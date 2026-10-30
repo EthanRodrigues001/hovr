@@ -1,4 +1,5 @@
 import { app } from 'electron'
+import { BRAND } from '../../shared/brand'
 import { isStoreBuild } from './ipc'
 import { pushState } from './state'
 
@@ -32,6 +33,12 @@ export function quitAndInstallUpdate(): void {
 export function initAutoUpdater(): void {
   if (isStoreBuild()) {
     console.log('[AutoUpdater] Store build detected — auto-updater disabled.')
+    return
+  }
+
+  // Updates come from the project's GitHub releases; with no repo there is nothing to check.
+  if (!BRAND.repoUrl) {
+    console.log('[AutoUpdater] No repository configured — auto-updater disabled.')
     return
   }
 

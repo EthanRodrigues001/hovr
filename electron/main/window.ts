@@ -1,194 +1,85 @@
 /**
- * The edge panel BrowserWindow.
+ * The notch BrowserWindow.
  *
- * The window is the full *expanded* size and sits at the left edge of the
- * primary display's work area. It is transparent and frameless, and is normally
- * click-through (`setIgnoreMouseEvents(true, { forward: true })`) so the desktop
- * stays fully usable. The renderer listens for pointer movement across the whole
- * page (which is still delivered even while click-through, thanks to `forward`)
- * and toggles interactivity via `setInteractive` once the cursor dwells in the
- * hot zone. This is what produces the "invisible until you approach the edge"
- * effect without a separate hidden trigger window.
- *
- * Drag-in support: a separate thin "detector" window is layered behind the
- * main panel. Historically it was kept non-click-through so it could receive
- * OS dragenter events, but on Windows that made it swallow all desktop clicks
- * across the hint-bar band (a transparent always-on-top BrowserWindow still
- * hit-tests across a minimum footprint). It is now click-through too; drag-in
- * still works because the main-process cursor poll (startCursorPoll) reads the
- * OS cursor position independently of mouse events, so it fires during an OS
- * file drag — the edge dwell opens the panel and makes the main window
- * interactive, and the drop then lands on the main window.
+ * A fixed-size transparent canvas centred on the top edge of the chosen display's
+ * work area. The visible notch (pill / card / settings sheet) is drawn by the
+ * renderer inside it. While collapsed the window is click-through
+ * (`setIgnoreMouseEvents(true)`), so the desktop below stays fully usable; hover is
+ * detected here by polling the OS cursor position, which keeps working while the
+ * window ignores the mouse. Once the notch opens the renderer calls
+ * `setInteractive(true)` and the card receives clicks.
  *
  * NOTE: this module must NOT import from state.ts to avoid circular dependencies.
  */
 import { BrowserWindow, screen, shell } from 'electron'
 import { join } from 'node:path'
-import { existsSync } from 'node:fs'
-import { APP_CONFIG } from './config'
-import { runtime } from './config'
+import { NOTCH } from '../../shared/notch'
+import { APP_CONFIG, runtime } from './config'
 import { PATHS } from '../store/paths'
-import { computeStickBounds } from './geometry'
+import { computeNotchBounds, resolveDisplay, type DisplayInfo } from './geometry'
 import { loadSettings, saveSettings } from '../store/settings'
 import { isFullscreenAppActive, registerFullscreenActiveListener } from './fullscreen'
 
-export const PANEL_WIDTH = 384
-/** Visual width of the blade when collapsed (only used by the renderer). */
-export const COLLAPSED_WIDTH = 0
-
 let mainWindow: BrowserWindow | null = null
-// Kept only by the unused legacy helper at the bottom of this module. The
-// detector window is deliberately no longer created at runtime.
-let detectorWindow: BrowserWindow | null = null
 let interactive = false
-export let previewActive = false
-
-export let currentHotZoneWidth = 3
-export let currentStickDisplayId: number | undefined
-
-export function setHotZoneWidth(width: number): void {
-  currentHotZoneWidth = width
-}
-
-export function setStickDisplayId(id: number | undefined): void {
-  currentStickDisplayId = id
-}
 
 export function getMainWindow(): BrowserWindow | null {
   return mainWindow
 }
 
-/** True when the window currently accepts mouse clicks (blade is "open"). */
+/** True when the window currently accepts mouse clicks (notch is "open"). */
 export function isInteractive(): boolean {
   return interactive
 }
 
 /**
- * Toggle whether the panel swallows pointer events.
+ * Toggle whether the window swallows pointer events.
  *
- * - interactive=false (collapsed) -> click-through: Windows passes ALL mouse
- *   clicks to apps beneath. Edge detection is done by the main-process cursor
- *   poll (startCursorPoll), which reads screen.getCursorScreenPoint() directly,
- *   so no mouse-event forwarding is needed.
- * - interactive=true  (expanded) -> normal interactive window: the black blade
- *   captures all clicks.
+ * - false (collapsed): click-through. Windows passes all clicks to apps beneath.
+ * - true  (open): a normal interactive window.
+ * 'screen-saver' level keeps it above fullscreen browsers and games.
  */
 export function setInteractive(value: boolean): void {
   if (!mainWindow || value === interactive) return
   interactive = value
-  if (value) {
-    // Panel is open: disable click-through so user can interact.
-    mainWindow.setIgnoreMouseEvents(false)
-    // Use 'screen-saver' level to stay above fullscreen apps (YouTube fullscreen, games, etc.)
-    // 'floating' (HWND_TOPMOST) can be pushed behind by fullscreen D3D/browser windows.
-    mainWindow.setAlwaysOnTop(true, 'screen-saver')
-  } else {
-    // Panel is closed: full click-through, no forwarding needed.
-    mainWindow.setIgnoreMouseEvents(true, { forward: false })
-    mainWindow.setAlwaysOnTop(true, 'screen-saver')
-  }
+  if (value) mainWindow.setIgnoreMouseEvents(false)
+  else mainWindow.setIgnoreMouseEvents(true, { forward: false })
+  mainWindow.setAlwaysOnTop(true, 'screen-saver')
 }
 
-export function setPreviewMode(active: boolean): void {
-  if (previewActive === active) return
-  previewActive = active
-  repositionWindow()
-}
+/* ------------------------------------------------------------------ */
+/* Cursor polling                                                      */
+/* ------------------------------------------------------------------ */
 
-/**
- * Poll the OS cursor position every ~16ms and send `window:cursor-edge` to
- * the renderer. This is the reliable alternative to `forward:true` on Windows
- * transparent windows, where pointermove forwarding often silently stops
- * working.
- */
 let cursorPollTimer: ReturnType<typeof setInterval> | null = null
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null
-let lastEdgeState = false
-let heartbeatPaused = false
+let wasNear = false
 
 /**
- * Temporarily suspend the always-on-top heartbeat.
- *
- * The heartbeat calls setAlwaysOnTop() every 500 ms, which reasserts z-order
- * via SetWindowPos(HWND_TOPMOST) on Windows.  During a native drag the OS
- * renders the drag-ghost image using the DWM compositor at a layer that sits
- * BELOW HWND_TOPMOST windows.  Every heartbeat tick therefore pushes our
- * window in front of the ghost, making it disappear ~0.5 s into any drag.
- *
- * Pausing the heartbeat for the duration of the drag keeps the window at its
- * current z-position and lets the DWM ghost stay visible for the full drag.
- * The heartbeat is re-enabled (and immediately re-asserts always-on-top) when
- * the drag ends.
+ * Poll the OS cursor every ~16 ms and stream its position (relative to the window)
+ * to the renderer while it is near the notch, while the notch is open, and once more
+ * when it leaves. `forward:true` pointer events are unreliable on Windows
+ * transparent windows, hence the poll.
  */
-export function setHeartbeatPaused(paused: boolean): void {
-  heartbeatPaused = paused
-  if (!paused) {
-    // Re-assert z-order immediately when drag ends so the window snaps back
-    // to the correct level without waiting up to 500 ms for the next tick.
-    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) {
-      mainWindow.setAlwaysOnTop(true, 'screen-saver')
-    }
-  }
-}
-
 export function startCursorPoll(): void {
   if (cursorPollTimer !== null) return
   cursorPollTimer = setInterval(() => {
     if (runtime.quitting || !mainWindow || mainWindow.isDestroyed() || !mainWindow.isVisible()) return
-
-    const settings = loadSettings()
-    if (settings.suppressInFullscreen && isFullscreenAppActive()) return
+    if (loadSettings().suppressInFullscreen && isFullscreenAppActive()) return
 
     const pt = screen.getCursorScreenPoint()
+    const b = mainWindow.getBounds()
+    const x = pt.x - b.x
+    const y = pt.y - b.y
+    // Windows occasionally reports garbage coordinates.
+    if (Math.abs(x) > 20000 || Math.abs(y) > 20000) return
 
-    // Find the stick display (or fallback to primary)
-    const allDisplays = screen.getAllDisplays()
-    let stickDisplay = allDisplays.find(d => d.id === currentStickDisplayId)
-    if (!stickDisplay) {
-      stickDisplay = screen.getPrimaryDisplay()
+    const near =
+      x >= -NOTCH.buffer && x <= b.width + NOTCH.buffer && y >= -NOTCH.buffer && y <= b.height + NOTCH.buffer
+    if ((near || interactive || wasNear) && !mainWindow.webContents.isDestroyed()) {
+      mainWindow.webContents.send('window:cursor', { x, y, width: b.width, height: b.height })
     }
-
-    const wa = stickDisplay.workArea
-
-    // Translate screen coords → stick display client coords.
-    const clientX = pt.x - wa.x
-    const clientY = pt.y - wa.y
-
-    // Guard against garbage values that Windows occasionally sends.
-    if (clientX < -5000 || clientX > 15000 || clientY < -5000 || clientY > 15000) return
-
-    let inEdge = false
-    switch (settings.stickPosition) {
-      case 'left':
-        inEdge = clientX >= -30 && clientX <= currentHotZoneWidth
-        break
-      case 'right':
-        const distFromRight = wa.width - clientX
-        inEdge = distFromRight >= -30 && distFromRight <= currentHotZoneWidth
-        break
-    }
-
-    const newState = inEdge
-
-    // Stream cursor position while near the edge (opening), while open (closing),
-    // or when edge state changes. The near-edge check adapts to stick position.
-    const nearEdge = settings.stickPosition === 'right'
-      ? (wa.width - clientX) <= 450
-      : clientX <= 450
-    if (nearEdge || interactive || newState !== lastEdgeState) {
-      lastEdgeState = newState
-      if (!mainWindow.webContents.isDestroyed()) {
-        mainWindow.webContents.send('window:cursor-edge', {
-          x: clientX,
-          y: clientY,
-          inEdge,
-          inZone: true,
-          stickPosition: settings.stickPosition,
-          displayWidth: wa.width,
-          displayHeight: wa.height
-        })
-      }
-    }
+    wasNear = near
   }, 16)
 }
 
@@ -199,103 +90,96 @@ export function stopCursorPoll(): void {
   }
 }
 
-function getStickGeometry(): { x: number; y: number; width: number; height: number } {
-  let settings = loadSettings()
-  const primaryDisplay = screen.getPrimaryDisplay()
-  const allDisplays = screen.getAllDisplays().map(d => ({
+export function stopHeartbeat(): void {
+  if (heartbeatTimer !== null) {
+    clearInterval(heartbeatTimer)
+    heartbeatTimer = null
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Placement                                                           */
+/* ------------------------------------------------------------------ */
+
+function currentDisplays(): DisplayInfo[] {
+  const primaryId = screen.getPrimaryDisplay().id
+  return screen.getAllDisplays().map((d) => ({
     id: d.id,
     workArea: { ...d.workArea },
     scaleFactor: d.scaleFactor,
-    isPrimary: d.id === primaryDisplay.id
+    isPrimary: d.id === primaryId
   }))
+}
 
-  const currentWindowWidth = previewActive ? 820 : PANEL_WIDTH
-
-  const result = computeStickBounds({
-    position: settings.stickPosition,
-    displays: allDisplays,
+function getNotchGeometry(): { x: number; y: number; width: number; height: number } {
+  let settings = loadSettings()
+  const displays = currentDisplays()
+  const result = computeNotchBounds({
+    displays,
     displayId: settings.stickDisplayId,
     savedWorkArea: settings.stickDisplayWorkArea,
     savedScaleFactor: settings.stickDisplayScaleFactor,
-    windowWidth: currentWindowWidth,
-    windowHeight: primaryDisplay.workArea.height, // initial hint; result uses resolvedDisplay.workArea.height
-    currentBounds: getMainWindow()?.getBounds()
+    windowWidth: NOTCH.windowWidth,
+    windowHeight: NOTCH.windowHeight,
+    currentBounds: mainWindow?.getBounds()
   })
-
   const resolved = result.resolvedDisplay
 
-  // ── Self-heal: persist fresh geometry whenever the resolved display differs ──
-  // This covers two scenarios:
-  //   A) Cross-reboot: OS re-assigned a new numeric ID to the same physical monitor.
-  //      We matched via Tier-2 fuzzy bounds — now save the new ID so future same-
-  //      session lookups hit Tier-1 instantly.
-  //   B) Display disconnected: Tier-4 fell back to primary — clear stale persisted
-  //      display so the app stays fully usable and the UI shows primary as active.
-  const idChanged = settings.stickDisplayId !== undefined && settings.stickDisplayId !== resolved.id
-  const idWasStale = settings.stickDisplayId !== undefined && !allDisplays.some(d => d.id === settings.stickDisplayId)
-
+  // Self-heal: keep the persisted display fingerprint in step with what resolved.
+  const savedId = settings.stickDisplayId
+  const idWasStale = savedId !== undefined && !displays.some((d) => d.id === savedId)
   if (idWasStale) {
-    // The old ID no longer exists in this session (disconnected or reboot rename).
-    // Check whether we recovered via Tier-2 or fell all the way to primary.
-    const recoveredViaBounds = settings.stickDisplayWorkArea !== undefined && resolved.id !== primaryDisplay.id
-    if (recoveredViaBounds) {
-      console.log(`[Main] Display ${settings.stickDisplayId} re-matched via geometry to display ${resolved.id} — updating persisted ID.`)
-    } else {
-      console.log(`[Main] Display ${settings.stickDisplayId} disconnected or unrecognised. Falling back to display ${resolved.id}.`)
-    }
+    // The saved id is gone (disconnected, or renumbered after a reboot).
+    const recoveredViaBounds = settings.stickDisplayWorkArea !== undefined && !resolved.isPrimary
+    console.log(
+      recoveredViaBounds
+        ? `[Main] Display ${savedId} re-matched via geometry to display ${resolved.id}.`
+        : `[Main] Display ${savedId} disconnected or unrecognised. Falling back to display ${resolved.id}.`
+    )
     settings = saveSettings({
       stickDisplayId: recoveredViaBounds ? resolved.id : undefined,
       stickDisplayWorkArea: recoveredViaBounds ? resolved.workArea : undefined,
       stickDisplayScaleFactor: recoveredViaBounds ? resolved.scaleFactor : undefined
     })
-    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
-      mainWindow.webContents.send('state:settings', settings)
-    }
-    if (!recoveredViaBounds) {
-      // Genuinely fell back — briefly show panel on new location.
-      popUpAndRetract(1500)
-    }
-  } else if (idChanged) {
-    // Shouldn't happen if Tier-1 matched, but guard it anyway.
+    sendSettings(settings)
+    // A genuine fallback moved the notch to a different screen: show where it went.
+    if (!recoveredViaBounds) popUpAndRetract(1500)
+  } else if (savedId !== undefined && savedId !== resolved.id) {
     settings = saveSettings({
       stickDisplayId: resolved.id,
       stickDisplayWorkArea: resolved.workArea,
       stickDisplayScaleFactor: resolved.scaleFactor
     })
-    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
-      mainWindow.webContents.send('state:settings', settings)
-    }
-  } else if (settings.stickDisplayId !== undefined && (
-    settings.stickDisplayWorkArea === undefined ||
-    settings.stickDisplayScaleFactor === undefined
-  )) {
-    // Upgrade: user had a stickDisplayId saved before this feature was added;
-    // backfill geometry silently so the next reboot can fuzzy-match.
-    saveSettings({
-      stickDisplayWorkArea: resolved.workArea,
-      stickDisplayScaleFactor: resolved.scaleFactor
-    })
+    sendSettings(settings)
+  } else if (
+    savedId !== undefined &&
+    (settings.stickDisplayWorkArea === undefined || settings.stickDisplayScaleFactor === undefined)
+  ) {
+    saveSettings({ stickDisplayWorkArea: resolved.workArea, stickDisplayScaleFactor: resolved.scaleFactor })
   }
 
-  currentStickDisplayId = resolved.id
   return { x: result.x, y: result.y, width: result.width, height: result.height }
 }
 
+function sendSettings(settings: ReturnType<typeof loadSettings>): void {
+  if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+    mainWindow.webContents.send('state:settings', settings)
+  }
+}
+
 export function createWindow(): BrowserWindow {
-  const { x, y, height } = getStickGeometry()
+  const { x, y, width, height } = getNotchGeometry()
 
   mainWindow = new BrowserWindow({
     icon: PATHS.icon(),
     x,
     y,
-    width: PANEL_WIDTH,
+    width,
     height,
     show: false,
     frame: false,
     fullscreenable: false,
     maximizable: false,
-    minWidth: PANEL_WIDTH,
-    minHeight: 320,
     movable: false,
     resizable: false,
     transparent: true,
@@ -314,42 +198,31 @@ export function createWindow(): BrowserWindow {
     }
   })
 
-  // Start click-through with no forwarding — edge detection is done via cursor poll.
+  // Start click-through; hover detection is the cursor poll.
   mainWindow.setIgnoreMouseEvents(true, { forward: false })
 
   registerFullscreenActiveListener(() => {
-    const settings = loadSettings()
-    if (settings.suppressInFullscreen) {
-      if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
-        mainWindow.webContents.send('window:toggle', false)
-      }
-      setInteractive(false)
+    if (!loadSettings().suppressInFullscreen) return
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+      mainWindow.webContents.send('window:toggle', false)
     }
+    setInteractive(false)
   })
 
   const handleDisplayChange = (triggerPopUp = false) => {
-    console.log('[Main] Display metrics/topology changed — validating bounds and repositioning window')
+    console.log('[Main] Display metrics/topology changed, repositioning window')
     repositionWindow()
-    if (triggerPopUp) {
-      popUpAndRetract(1500)
-    }
+    if (triggerPopUp) popUpAndRetract(1500)
   }
-
-  // Keep the panel glued to the primary display if the work area changes.
   screen.on('display-metrics-changed', () => handleDisplayChange(false))
-  screen.on('display-added', () => {
+  const onTopologyChange = () => {
     handleDisplayChange(true)
     setTimeout(() => handleDisplayChange(false), 300)
-  })
-  screen.on('display-removed', () => {
-    handleDisplayChange(true)
-    setTimeout(() => handleDisplayChange(false), 300)
-  })
+  }
+  screen.on('display-added', onTopologyChange)
+  screen.on('display-removed', onTopologyChange)
 
-  // Respect OS-level always-on-top reordering.
-  mainWindow.on('focus', () => {
-    mainWindow?.setAlwaysOnTop(true, 'screen-saver')
-  })
+  mainWindow.on('focus', () => mainWindow?.setAlwaysOnTop(true, 'screen-saver'))
 
   // Open external links in the default browser.
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -357,7 +230,6 @@ export function createWindow(): BrowserWindow {
     return { action: 'deny' }
   })
 
-  // Load the renderer.
   if (APP_CONFIG.is.dev && process.env.ELECTRON_RENDERER_URL) {
     mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
   } else {
@@ -366,8 +238,8 @@ export function createWindow(): BrowserWindow {
 
   mainWindow.once('ready-to-show', () => {
     if (!mainWindow) return
+    console.log('[Main] notch window bounds', JSON.stringify(mainWindow.getBounds()))
     mainWindow.showInactive()
-    // 'screen-saver' level stays above fullscreen browser windows and games.
     mainWindow.setAlwaysOnTop(true, 'screen-saver')
   })
 
@@ -376,17 +248,15 @@ export function createWindow(): BrowserWindow {
   })
 
   mainWindow.on('close', (e) => {
-    if (!runtime.quitting) {
-      e.preventDefault()
-    }
+    if (!runtime.quitting) e.preventDefault()
   })
 
-  // Periodic heartbeat: Windows fullscreen apps (Chrome YouTube, games) push
-  // floating windows behind them. Re-asserting 'screen-saver' level every 500ms
-  // ensures the panel instantly re-appears when the user exits fullscreen.
+  // Windows fullscreen apps (Chrome YouTube, games) push floating windows behind
+  // them. Re-asserting the level every 500 ms brings the notch back as soon as the
+  // user leaves fullscreen.
   if (heartbeatTimer !== null) clearInterval(heartbeatTimer)
   heartbeatTimer = setInterval(() => {
-    if (runtime.quitting || heartbeatPaused || interactive) return
+    if (runtime.quitting || interactive) return
     if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) {
       mainWindow.setAlwaysOnTop(true, 'screen-saver')
     }
@@ -395,59 +265,26 @@ export function createWindow(): BrowserWindow {
   return mainWindow
 }
 
-export function stopHeartbeat(): void {
-  if (heartbeatTimer !== null) {
-    clearInterval(heartbeatTimer)
-    heartbeatTimer = null
-  }
-}
-
 let onWindowRepositioned: (() => void) | null = null
 export function registerWindowRepositionListener(fn: () => void): void {
   onWindowRepositioned = fn
 }
 
-export function getActiveDisplayId(allDisplays?: Electron.Display[]): number {
-  const displays = allDisplays ?? screen.getAllDisplays()
+export function getActiveDisplayId(): number {
   const settings = loadSettings()
-  const primary = screen.getPrimaryDisplay()
-
-  // Tier 1: exact session-local ID match.
-  if (settings.stickDisplayId !== undefined && displays.some(d => d.id === settings.stickDisplayId)) {
-    return settings.stickDisplayId
-  }
-
-  // Tier 2: fuzzy workArea match (cross-reboot).
-  if (settings.stickDisplayWorkArea !== undefined) {
-    const TOLERANCE = 8
-    const sa = settings.stickDisplayWorkArea
-    const candidates = displays.filter(d =>
-      Math.abs(d.workArea.x - sa.x) <= TOLERANCE &&
-      Math.abs(d.workArea.y - sa.y) <= TOLERANCE &&
-      Math.abs(d.workArea.width - sa.width) <= TOLERANCE &&
-      Math.abs(d.workArea.height - sa.height) <= TOLERANCE
-    )
-    if (candidates.length === 1) return candidates[0].id
-    if (candidates.length > 1 && settings.stickDisplayScaleFactor !== undefined) {
-      const byScale = candidates.find(d => d.scaleFactor === settings.stickDisplayScaleFactor)
-      if (byScale) return byScale.id
-      return candidates[0].id
-    }
-    if (candidates.length > 1) return candidates[0].id
-  }
-
-  // Tier 3: in-memory ID set this session by getStickGeometry.
-  if (currentStickDisplayId !== undefined && displays.some(d => d.id === currentStickDisplayId)) {
-    return currentStickDisplayId
-  }
-
-  // Tier 4: primary fallback.
-  return primary.id
+  return resolveDisplay({
+    displays: currentDisplays(),
+    displayId: settings.stickDisplayId,
+    savedWorkArea: settings.stickDisplayWorkArea,
+    savedScaleFactor: settings.stickDisplayScaleFactor
+  }).id
 }
 
 export function getDisplayListOptions(): Array<{
   id: number
   bounds: { x: number; y: number; width: number; height: number }
+  /** Usable area (excludes the taskbar): the fingerprint display matching uses. */
+  workArea: { x: number; y: number; width: number; height: number }
   scaleFactor: number
   isPrimary: boolean
   isCurrent: boolean
@@ -457,23 +294,24 @@ export function getDisplayListOptions(): Array<{
 }> {
   const all = screen.getAllDisplays()
   const primary = screen.getPrimaryDisplay()
-  const activeId = getActiveDisplayId(all)
+  const activeId = getActiveDisplayId()
 
   return all.map((d, index) => {
     const isPrimary = d.id === primary.id
-    const rawName = (d as any).label || (d as any).name || ''
+    const rawName = (d as unknown as { label?: string; name?: string }).label || ''
     const fallbackName = isPrimary ? 'Primary Monitor' : `Display ${index + 1}`
     const baseName = rawName.trim() ? rawName.trim() : fallbackName
     const name = isPrimary
-      ? (baseName.toLowerCase().includes('primary') ? baseName : `${baseName} (Primary)`)
+      ? baseName.toLowerCase().includes('primary')
+        ? baseName
+        : `${baseName} (Primary)`
       : baseName
     const scale = d.scaleFactor || 1
-    const physW = Math.round(d.bounds.width * scale)
-    const physH = Math.round(d.bounds.height * scale)
-    const resolution = `${physW}×${physH}`
+    const resolution = `${Math.round(d.bounds.width * scale)}×${Math.round(d.bounds.height * scale)}`
     return {
       id: d.id,
       bounds: { x: d.bounds.x, y: d.bounds.y, width: d.bounds.width, height: d.bounds.height },
+      workArea: { ...d.workArea },
       scaleFactor: scale,
       isPrimary,
       isCurrent: d.id === activeId,
@@ -485,26 +323,24 @@ export function getDisplayListOptions(): Array<{
 }
 
 let popUpTimer: ReturnType<typeof setTimeout> | null = null
+
+/** Briefly open the notch (e.g. to confirm it moved to another display), then close it. */
 export function popUpAndRetract(durationMs = 1500): void {
-  if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.webContents || mainWindow.webContents.isDestroyed()) return
+  if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isDestroyed()) return
   if (mainWindow.isMinimized()) mainWindow.restore()
   mainWindow.showInactive()
   mainWindow.setAlwaysOnTop(true, 'screen-saver')
 
   const wasAlreadyOpen = interactive
-  console.log(`[Main] Popping up panel briefly to confirm new screen/edge location (wasAlreadyOpen=${wasAlreadyOpen})`)
   mainWindow.webContents.send('window:toggle', true)
-
   if (popUpTimer !== null) clearTimeout(popUpTimer)
-  if (!wasAlreadyOpen) {
-    popUpTimer = setTimeout(() => {
-      popUpTimer = null
-      if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
-        console.log('[Main] Retracting panel after brief confirmation pop-up')
-        mainWindow.webContents.send('window:toggle', false)
-      }
-    }, durationMs)
-  }
+  if (wasAlreadyOpen) return
+  popUpTimer = setTimeout(() => {
+    popUpTimer = null
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+      mainWindow.webContents.send('window:toggle', false)
+    }
+  }, durationMs)
 }
 
 export function repositionWindow(): void {
@@ -512,12 +348,11 @@ export function repositionWindow(): void {
   if (mainWindow.isMinimized()) mainWindow.restore()
   mainWindow.showInactive()
   mainWindow.setAlwaysOnTop(true, 'screen-saver')
-  const g = getStickGeometry()
-  mainWindow.setBounds({ ...g })
+  mainWindow.setBounds({ ...getNotchGeometry() })
   onWindowRepositioned?.()
 }
 
-/** Toggle the panel between shown (always on top) and fully hidden. */
+/** Toggle the notch window between shown (always on top) and fully hidden. */
 export function setVisible(visible: boolean): void {
   if (!mainWindow) return
   if (visible) {
@@ -526,91 +361,4 @@ export function setVisible(visible: boolean): void {
   } else {
     mainWindow.hide()
   }
-}
-
-/**
- * Thin invisible detector window.
- *
- * It is click-through just like the main window, so when the panel is collapsed
- * it does not steal desktop clicks. It no longer drives opening (the cursor
- * poll does that). It is kept around as a fallback drag surface and a no-op
- * drag-event absorber; its inline script still forwards file drags to the main
- * window via `window.edge.setInteractive(true)` should it ever receive one.
- */
-function getDetectorBounds(g: { x: number; y: number; width: number; height: number }, stickPosition: string): { x: number; y: number; width: number; height: number } {
-  if (stickPosition === 'top') {
-    const detWidth = Math.floor(g.width * 0.3)
-    return { x: g.x + Math.floor((g.width - detWidth) / 2), y: g.y, width: detWidth, height: 1 }
-  }
-  const h = g.height
-  const detHeight = Math.floor(h * 0.3)
-  const detY = g.y + Math.floor((h - detHeight) / 2)
-  return { x: g.x, y: detY, width: 1, height: detHeight }
-}
-
-export function createDetectorWindow(x: number, y: number, _w: number, h: number): void {
-  const detBounds = getDetectorBounds({ x, y, width: _w, height: h }, loadSettings().stickPosition)
-
-  detectorWindow = new BrowserWindow({
-    x: detBounds.x,
-    y: detBounds.y,
-    width: detBounds.width,
-    height: detBounds.height,
-    show: false,
-    frame: false,
-    fullscreenable: false,
-    maximizable: false,
-    movable: false,
-    resizable: false,
-    transparent: true,
-    hasShadow: false,
-    skipTaskbar: true,
-    alwaysOnTop: true,
-    backgroundColor: '#00000000',
-    roundedCorners: false,
-    focusable: false,
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.cjs'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true,
-      spellcheck: false
-    }
-  })
-
-  // Click-through, like the main window. A non-click-through always-on-top
-  // window here used to swallow all desktop clicks across the hint-bar band
-  // even though it was only 1px wide (Windows still hit-tests a transparent
-  // always-on-top BrowserWindow across a minimum footprint). Keeping it
-  // click-through means the collapsed panel passes clicks through everywhere.
-  //
-  // Drag-in is NOT lost: the main-process cursor poll
-  // (screen.getCursorScreenPoint) reads the OS cursor position every ~16ms
-  // regardless of mouse events, so it still fires while an OS file drag is in
-  // progress — the 120ms edge dwell opens the panel and makes the main window
-  // interactive, and the drop then lands on the main window.
-  detectorWindow.setIgnoreMouseEvents(true, { forward: false })
-
-  // Layer behind the main panel (lower always-on-top level).
-  detectorWindow.setAlwaysOnTop(true, 'normal')
-
-  const devDetectorFile = join(__dirname, '../../resources/detector.html')
-  const detectorFile = existsSync(devDetectorFile) ? devDetectorFile : join(process.resourcesPath, 'detector.html')
-  if (existsSync(detectorFile)) {
-    detectorWindow.loadFile(detectorFile)
-  }
-
-  detectorWindow.once('ready-to-show', () => {
-    detectorWindow?.showInactive()
-  })
-
-  detectorWindow.on('close', (e) => {
-    if (!runtime.quitting) {
-      e.preventDefault()
-    }
-  })
-
-  detectorWindow.on('closed', () => {
-    detectorWindow = null
-  })
 }

@@ -7,7 +7,7 @@ export const runtime = {
 }
 
 export const APP_CONFIG = {
-  appName: 'Edge-Drop',
+  appName: 'HOVR',
   /** Custom protocol used to serve local image files to the renderer securely. */
   imageProtocol: 'edgelocal',
   is: {
