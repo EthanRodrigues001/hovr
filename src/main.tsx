@@ -1,6 +1,7 @@
 /** React entry: mounts <App/> and pulls in the stylesheet layers. */
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import './dev/mock' // dev-only visual harness (no-op unless ?mock=1)
 import App from './App'
 
 // Stylesheet order matters: tokens first, then globals, then the notch.

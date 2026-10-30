@@ -222,25 +222,26 @@ export function TimelineTab() {
                   )}
                   <div
                     className={`tl-block tl-cur tl-tone-${tone}`}
-                    style={{ left: `${cur.left}%`, width: `${Math.max(0.6, cur.right - cur.left)}%` }}
+                    style={{ left: `${cur.left}%`, width: `${Math.max(0.6, cur.right - cur.left)}%`, '--used': `${used}%` } as CSSProperties}
                     onMouseEnter={(e) => tip.show(e, info)}
                     onMouseLeave={tip.hide}
                   >
                     {!narrow && (
                       <span>
                         {Math.round(used)}% Used · {weekdayTime(l.resetsAt, now)}
+                        {runOut !== null && <em className="tl-warn"> · out {weekdayTime(runOut, now)}</em>}
                       </span>
-                    )}
-                    {runOut !== null && (
-                      <i className="tl-lock" style={{ width: `${((l.resetsAt - runOut) / l.length) * 100}%` }} />
                     )}
                     <div className="tl-prog">
                       <i style={{ width: `${used}%` }} />
                       <u style={{ left: `${elapsed * 100}%` }} />
                     </div>
                   </div>
+                  {!narrow && runOut !== null && pct(runOut) < 100 && pct(l.resetsAt) - pct(runOut) > 0.4 && (
+                    <i className="tl-lock" style={{ left: `${pct(runOut)}%`, width: `${pct(l.resetsAt) - pct(runOut)}%` }} />
+                  )}
                   {narrow && (
-                    <div className="tl-outside" style={{ left: `${cur.right + 1.4}%` }}>
+                    <div className="tl-outside" style={{ left: `${cur.right + 2.4}%` }}>
                       <span>
                         {Math.round(used)}% Used · resets {weekdayTime(l.resetsAt, now)}
                       </span>

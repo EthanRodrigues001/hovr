@@ -1,0 +1,101 @@
+/**
+ * Dev-only visual harness: with `?mock=1` in the URL, the renderer runs against a
+ * fake preload bridge with fixed sample data, so screens can be rendered and
+ * screenshotted without the real app (see scripts/shot.cjs). Compiled out of
+ * production builds.
+ */
+import type { EdgeApi } from '../../shared/bridge'
+import { DEFAULT_SETTINGS } from '../../shared/types'
+import type { ProviderStatus, UsageLimits, UsageState } from '../../shared/usage'
+
+const params = new URLSearchParams(location.search)
+
+function sampleState(now = Date.now()): UsageState {
+  const iso = (ms: number) => new Date(now + ms).toISOString()
+  const H = 3_600_000
+  const D = 24 * H
+  const limits = (windows: UsageLimits['windows']): UsageLimits => ({ checkedAt: iso(0), windows })
+  const status = (id: ProviderStatus['id'], label: string, extra: Partial<ProviderStatus> = {}): ProviderStatus => ({
+    id,
+    label,
+    installed: true,
+    authState: 'authenticated',
+    enabled: true,
+    supportsLimits: true,
+    checkedAt: iso(0),
+    ...extra
+  })
+  return {
+    usage: {
+      claude: limits([
+        { id: 'five_hour', kind: 'session', label: 'Session', usedPercent: 57, resetsAt: iso(3 * H), windowDurationMins: 300 },
+        { id: 'seven_day', kind: 'weekly', label: 'Weekly', usedPercent: 30, resetsAt: iso(4.6 * D), windowDurationMins: 10080 }
+      ]),
+      codex: limits([{ id: 'monthly', kind: 'monthly', label: 'Monthly', usedPercent: 52, resetsAt: iso(18.8 * D), windowDurationMins: 31 * 1440 }]),
+      antigravity: limits([
+        { id: '3p-5h', kind: 'session', label: 'Claude & GPT (shared) · 5-hour', usedPercent: 0, resetsAt: iso(4.9 * H), windowDurationMins: 300 },
+        { id: '3p-weekly', kind: 'weekly', label: 'Claude & GPT (shared) · Weekly', usedPercent: 0, resetsAt: iso(6.9 * D), windowDurationMins: 10080 }
+      ])
+    },
+    providers: [
+      status('claude', 'Claude Code', { plan: 'Pro' }),
+      status('codex', 'Codex', { plan: 'Free', account: 'me@example.com' }),
+      status('antigravity', 'Antigravity')
+    ]
+  }
+}
+
+if (import.meta.env.DEV && params.get('mock')) {
+  const none = () => () => undefined
+  const edge: EdgeApi = {
+    loadState: async () => ({ settings: { ...DEFAULT_SETTINGS }, version: 'dev' }),
+    installUpdate: async () => undefined,
+    quitApp: async () => undefined,
+    updateSettings: async (patch) => ({ ...DEFAULT_SETTINGS, ...patch }),
+    setInteractive: async () => undefined,
+    getDisplays: async () => [],
+    getUsage: async () => sampleState(),
+    refreshUsage: async () => sampleState(),
+    getHistory: async (days) => {
+      const empty = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, requests: 0 }
+      return {
+        generatedAt: new Date().toISOString(),
+        days,
+        totals: { ...empty, costUsd: null },
+        byDay: [],
+        byModel: [],
+        byProvider: [],
+        costByType: null,
+        cacheSavingsUsd: null,
+        heatmap: Array.from({ length: 7 }, () => new Array<number>(24).fill(0)),
+        pricesAsOf: null,
+        providersScanned: []
+      }
+    },
+    getSamples: async () => [],
+    onUsage: none,
+    onSettings: none,
+    onToggle: none,
+    onOpenSettings: none,
+    onCursor: none,
+    onToast: none,
+    onUpdateAvailable: none,
+    onUpdateDownloaded: none
+  }
+  ;(window as unknown as { edge: EdgeApi }).edge = edge
+
+  const view = params.get('view')
+  if (view) {
+    void import('../store/appStore').then(({ useStore }) => {
+      const tab = params.get('tab')
+      const set = () =>
+        useStore.setState({
+          open: true,
+          view: view as 'usage' | 'settings' | 'analytics',
+          ...(tab ? { analyticsTab: tab as 'forecast' | 'spend' | 'timeline' } : {})
+        })
+      set()
+      setTimeout(set, 400) // after hydrate()
+    })
+  }
+}

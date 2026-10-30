@@ -15,7 +15,7 @@ export const NOTCH = {
   collapsedHeight: 34,
   /** Usage card. */
   cardWidth: 640,
-  cardMaxHeight: 620,
+  cardMaxHeight: 690,
   /** Analytics modal. */
   analyticsWidth: 1040,
   analyticsHeight: 740,

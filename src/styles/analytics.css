@@ -1392,3 +1392,24 @@
   width: 1.5px;
   background: rgba(255, 255, 255, 0.85);
 }
+
+/* lock hatch sits in the lane, positioned from the run-out time to the reset */
+.tl-lock {
+  top: 11px;
+  bottom: auto;
+  right: auto;
+  height: 32px;
+  border-radius: 0 8px 8px 0;
+  z-index: 1;
+  background: repeating-linear-gradient(135deg, rgba(248, 113, 113, 0.5) 0 1.5px, rgba(248, 113, 113, 0.1) 1.5px 5px);
+}
+
+.tl-warn {
+  font-style: normal;
+  font-weight: 500;
+}
+/* a narrow window has no room for a bar, so the block itself fills from the bottom */
+.tl-cur:has(+ .tl-outside),
+.tl-cur.tl-narrow {
+  background: linear-gradient(to top, color-mix(in srgb, var(--acc, #888) 55%, transparent) var(--used, 0%), color-mix(in srgb, var(--acc, #888) 12%, #0b0b0d) var(--used, 0%));
+}
