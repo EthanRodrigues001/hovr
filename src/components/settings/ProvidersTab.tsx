@@ -64,7 +64,7 @@ function ProviderRow({ p }: { p: ProviderStatus }) {
   }
 
   return (
-    <div className={`prow ${p.enabled ? '' : 'prow-off'}`}>
+    <div className={`prow ${p.enabled ? '' : 'prow-off'} ${p.installed ? '' : 'prow-missing'}`}>
       <div className="prow-main">
         <ProviderRing id={p.id} remaining={hasBars ? worstRemainingPercent(usage!.windows) : null} size={22} />
         <div className="prow-text">
@@ -80,7 +80,7 @@ function ProviderRow({ p }: { p: ProviderStatus }) {
             Test
           </button>
         )}
-        <Switch checked={p.enabled} onChange={toggle} label={`Show ${p.label}`} />
+        {p.installed && <Switch checked={p.enabled} onChange={toggle} label={`Show ${p.label}`} />}
         <button className={`icon-btn chev ${open ? 'open' : ''}`} onClick={() => setOpen(!open)} aria-label="Details" aria-expanded={open}>
           <ChevronDown size={15} />
         </button>
@@ -130,6 +130,11 @@ export function ProvidersTab() {
           Rescan
         </button>
       </div>
+      <p className="pcount">
+        {connected.length} connected
+        {attention.length > 0 && ` · ${attention.length} need attention`}
+        {` · ${missing.length} not found`}
+      </p>
       {group('Connected', connected)}
       {group('Needs attention', attention)}
       {group('Detected, no limits', detected)}

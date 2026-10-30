@@ -567,7 +567,7 @@ kbd {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 13px 0;
+  padding: 10px 0;
   border-bottom: 1px solid var(--hairline);
 }
 .srow-title {
@@ -720,4 +720,84 @@ kbd {
 }
 .plogo {
   display: block;
+}
+
+
+/* ---------- empty state ---------- */
+.empty h2 {
+  font-size: 17px;
+  font-weight: 650;
+  margin-top: 6px;
+}
+.empty .muted {
+  max-width: 420px;
+  line-height: 1.45;
+}
+.empty-logos {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+.empty-tool {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 14px 4px 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  opacity: 0.55;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+.empty-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.pill-empty span {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ---------- settings polish ---------- */
+.sgroup {
+  margin: 22px 0 2px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.tab-body > .sgroup:first-of-type {
+  margin-top: 6px;
+}
+.pcount {
+  margin: -4px 0 10px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.about-head {
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+}
+.about-mark {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: #fff;
+  flex: none;
+}
+
+.prow-missing {
+  opacity: 0.55;
+}
+.prow-missing:hover {
+  opacity: 0.85;
 }

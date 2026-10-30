@@ -3,6 +3,7 @@
  * of what hovr touches on this machine.
  */
 import { useStore } from '../../store/appStore'
+import { Logo } from '../Logo'
 import { edge } from '../../lib/edge'
 
 export function AboutTab() {
@@ -12,10 +13,13 @@ export function AboutTab() {
 
   return (
     <div className="tab-body">
-      <div className="tab-head">
+      <div className="tab-head about-head">
+        <span className="about-mark">
+          <Logo size={26} />
+        </span>
         <div>
-          <h2>About HOVR</h2>
-          <p className="muted">Version {version || '…'}</p>
+          <h2>HOVR</h2>
+          <p className="muted">Version {version || '…'} · usage limits for your AI coding tools</p>
         </div>
         {update && (
           <button className="btn btn-primary" onClick={() => void installUpdate()}>
@@ -44,6 +48,14 @@ export function AboutTab() {
         <p className="muted">
           The usage endpoints are the same private ones each tool's own usage screen calls. They can change without
           notice; when one does, that provider shows a message instead of numbers.
+        </p>
+      </section>
+
+      <section className="about-block">
+        <h3>Credits</h3>
+        <p className="muted">
+          Started from Edge-Drop (Apache-2.0). Provider logic follows T3 Code (MIT). Brand marks from @lobehub/icons
+          (MIT) belong to their owners. Full notes are in the README.
         </p>
       </section>
 

@@ -58,11 +58,12 @@ function useChips(): Chip[] {
 }
 
 function CollapsedPill({ chips, style }: { chips: Chip[]; style: 'chips' | 'dots' }) {
+  const loaded = useStore((s) => s.providers.length > 0)
   if (chips.length === 0) {
     return (
       <div className="pill pill-empty">
         <Logo size={14} />
-        <span>HOVR</span>
+        <span>{loaded ? 'No tools connected' : 'HOVR'}</span>
       </div>
     )
   }
@@ -85,8 +86,8 @@ function CollapsedPill({ chips, style }: { chips: Chip[]; style: 'chips' | 'dots
   )
 }
 
-function collapsedWidthFor(count: number, style: 'chips' | 'dots'): number {
-  if (count === 0) return 110
+function collapsedWidthFor(count: number, style: 'chips' | 'dots', loaded: boolean): number {
+  if (count === 0) return loaded ? 168 : 110
   const per = style === 'chips' ? 62 : 38
   return Math.min(NOTCH.collapsedWidth + 40, 28 + Math.min(count, MAX_CHIPS) * per + (count > MAX_CHIPS ? 26 : 0))
 }
@@ -98,6 +99,7 @@ function UsageLayer({ onContentHeight }: { onContentHeight: (h: number) => void 
   const openAnalytics = useStore((s) => s.openAnalytics)
   const contentRef = useRef<HTMLDivElement>(null)
   const usage = useStore((s) => s.usage)
+  const providerCount = useStore((s) => s.providers.filter((p) => p.installed).length)
   const refreshMinutes = useStore((s) => s.settings.usageRefreshMinutes)
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -108,7 +110,9 @@ function UsageLayer({ onContentHeight }: { onContentHeight: (h: number) => void 
   const mins = newest ? Math.floor((now - newest) / 60_000) : null
   const footerText =
     mins === null
-      ? 'Waiting for the first reading'
+      ? providerCount > 0
+        ? 'Nothing to read yet'
+        : 'Waiting for the first reading'
       : `Updated ${mins < 1 ? 'just now' : `${mins}m ago`} · refreshes every ${refreshMinutes} min`
 
   useLayoutEffect(() => {
@@ -169,7 +173,8 @@ export function Notch() {
     return () => registerNotchElement(null)
   }, [])
 
-  const collapsedW = collapsedWidthFor(chips.length, settings.collapsedStyle)
+  const loaded = useStore((s) => s.providers.length > 0)
+  const collapsedW = collapsedWidthFor(chips.length, settings.collapsedStyle, loaded)
   const target = !open
     ? { width: collapsedW, height: NOTCH.collapsedHeight, radius: NOTCH.collapsedHeight / 2 }
     : view === 'settings'

@@ -20,7 +20,7 @@ app.whenReady().then(async () => {
     backgroundColor: '#1a1a1a',
     webPreferences: { backgroundThrottling: false }
   })
-  await win.loadURL(`http://localhost:5173/?mock=1&${query}`)
+  await win.loadURL(`http://localhost:5173/?${query.includes('mock=') ? '' : 'mock=1&'}${query}`)
   await new Promise((r) => setTimeout(r, 2500))
   const image = await win.webContents.capturePage()
   writeFileSync(out, image.toPNG())

@@ -21,7 +21,7 @@ export const NOTCH = {
   analyticsHeight: 740,
   /** Settings sheet. */
   settingsWidth: 680,
-  settingsHeight: 560,
+  settingsHeight: 640,
   /** Cursor must be within this many px of the screen top to arm the hover. */
   triggerDepth: 3,
   /** ...and within this horizontal distance of the window centre. */

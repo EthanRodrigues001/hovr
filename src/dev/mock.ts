@@ -10,7 +10,17 @@ import type { ProviderStatus, UsageLimits, UsageState } from '../../shared/usage
 
 const params = new URLSearchParams(location.search)
 
+function emptyState(): UsageState {
+  const ids = ['claude', 'codex', 'cursor', 'antigravity', 'grok', 'opencode', 'muse', 'pi', 'copilot', 'gemini'] as const
+  const labels: Record<string, string> = { claude: 'Claude Code', codex: 'Codex', cursor: 'Cursor', antigravity: 'Antigravity', grok: 'Grok', opencode: 'OpenCode', muse: 'Muse', pi: 'Pi', copilot: 'GitHub Copilot', gemini: 'Gemini CLI' }
+  return {
+    usage: {},
+    providers: ids.map((id) => ({ id, label: labels[id], installed: false, authState: 'unknown' as const, enabled: true, supportsLimits: !['muse', 'pi', 'copilot', 'gemini'].includes(id) }))
+  }
+}
+
 function sampleState(now = Date.now()): UsageState {
+  if (params.get('mock') === 'empty') return emptyState()
   const iso = (ms: number) => new Date(now + ms).toISOString()
   const H = 3_600_000
   const D = 24 * H
@@ -120,7 +130,8 @@ if (import.meta.env.DEV && params.get('mock')) {
         useStore.setState({
           open: true,
           view: view as 'usage' | 'settings' | 'analytics',
-          ...(tab ? { analyticsTab: tab as 'forecast' | 'spend' | 'timeline' } : {})
+          ...(tab && view === 'analytics' ? { analyticsTab: tab as 'forecast' | 'spend' | 'timeline' } : {}),
+          ...(tab && view === 'settings' ? { settingsTab: tab as 'providers' | 'general' | 'about' } : {})
         })
       set()
       setTimeout(set, 400) // after hydrate()

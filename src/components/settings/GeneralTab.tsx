@@ -29,6 +29,7 @@ export function GeneralTab() {
         </div>
       </div>
 
+      <h3 className="sgroup">Notch</h3>
       <Row title="Collapsed notch" hint="What the small pill shows before you hover it.">
         <Segmented<CollapsedStyle>
           value={settings.collapsedStyle}
@@ -51,6 +52,19 @@ export function GeneralTab() {
         />
       </Row>
 
+      <Row title="Ignore hover in fullscreen" hint="Never pop up over games or fullscreen video.">
+        <Switch
+          checked={settings.suppressInFullscreen}
+          onChange={(suppressInFullscreen) => void patch({ suppressInFullscreen })}
+          label="Ignore hover in fullscreen"
+        />
+      </Row>
+
+      <Row title="Reduce motion" hint="Skip the open and close animations.">
+        <Switch checked={settings.reduceMotion} onChange={(reduceMotion) => void patch({ reduceMotion })} label="Reduce motion" />
+      </Row>
+
+      <h3 className="sgroup">Usage data</h3>
       <Row title="Alerts" hint="A notification when a limit is nearly used up or will run out before it resets.">
         <Switch checked={settings.notifications} onChange={(notifications) => void patch({ notifications })} label="Alerts" />
       </Row>
@@ -73,14 +87,6 @@ export function GeneralTab() {
         </Row>
       )}
 
-      <Row title="Ignore hover in fullscreen" hint="Never pop up over games or fullscreen video.">
-        <Switch
-          checked={settings.suppressInFullscreen}
-          onChange={(suppressInFullscreen) => void patch({ suppressInFullscreen })}
-          label="Ignore hover in fullscreen"
-        />
-      </Row>
-
       <Row title="Dollar estimates in Analytics" hint="Downloads a public price list once a day. Off shows token counts only.">
         <Switch
           checked={settings.showCostEstimates}
@@ -89,11 +95,8 @@ export function GeneralTab() {
         />
       </Row>
 
-      <Row title="Reduce motion" hint="Skip the open and close animations.">
-        <Switch checked={settings.reduceMotion} onChange={(reduceMotion) => void patch({ reduceMotion })} label="Reduce motion" />
-      </Row>
-
-      <Row title="Start with Windows">
+      <h3 className="sgroup">System</h3>
+      <Row title="Start with Windows" hint="Launch hovr when you sign in.">
         <Switch checked={settings.launchAtLogin} onChange={(launchAtLogin) => void patch({ launchAtLogin })} label="Start with Windows" />
       </Row>
     </div>

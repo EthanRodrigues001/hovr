@@ -3,7 +3,9 @@
  * short list of tools that were detected but cannot show limits.
  */
 import { useEffect, useMemo, useState } from 'react'
-import type { ProviderStatus, UsageLimits } from '../../shared/usage'
+import type { ProviderId, ProviderStatus, UsageLimits } from '../../shared/usage'
+import { PROVIDER_META } from '../lib/providers'
+import { ProviderLogo } from './ProviderLogo'
 import { limitsNotice, worstRemainingPercent } from '../../shared/usageMath'
 import { useStore } from '../store/appStore'
 import { ProviderRing } from './ProviderRing'
@@ -43,10 +45,45 @@ function ProviderCard({
   )
 }
 
+const SHOWCASE: ProviderId[] = ['claude', 'codex', 'cursor', 'antigravity', 'grok', 'opencode']
+
+function EmptyState() {
+  const providers = useStore((s) => s.providers)
+  const refresh = useStore((s) => s.refresh)
+  const refreshing = useStore((s) => s.refreshing)
+  const openSettings = useStore((s) => s.openSettings)
+  const switchedOff = providers.some((p) => p.installed && !p.enabled)
+  return (
+    <div className="empty">
+      <div className="empty-logos">
+        {SHOWCASE.map((id) => (
+          <div key={id} className="empty-tool" title={PROVIDER_META[id].short}>
+            <ProviderLogo id={id} size={26} />
+            <span>{PROVIDER_META[id].short}</span>
+          </div>
+        ))}
+      </div>
+      <h2>{switchedOff ? 'Every connected tool is switched off' : 'No AI tools connected yet'}</h2>
+      <p className="muted">
+        {switchedOff
+          ? 'Turn a tool back on in Settings to see its limits here.'
+          : 'Install one of these and sign in. hovr finds it on its own and shows how much of each limit is left.'}
+      </p>
+      <div className="empty-actions">
+        <button className="btn" onClick={() => void refresh()} disabled={refreshing}>
+          {refreshing ? 'Looking…' : 'Look again'}
+        </button>
+        <button className="btn btn-ghost" onClick={() => openSettings('providers')}>
+          Open settings
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function UsageView() {
   const providers = useStore((s) => s.providers)
   const usage = useStore((s) => s.usage)
-  const openSettings = useStore((s) => s.openSettings)
 
   // Tick so countdowns and "updated" labels stay fresh while the card is open.
   const [now, setNow] = useState(() => Date.now())
@@ -66,15 +103,7 @@ export function UsageView() {
   }, [providers, usage])
 
   if (providers.length > 0 && live.length + attention.length + detected.length === 0) {
-    return (
-      <div className="empty">
-        <p>No supported AI tools found on this PC.</p>
-        <p className="muted">Install Claude Code, Codex, Cursor or another supported tool and sign in.</p>
-        <button className="btn" onClick={() => openSettings('providers')}>
-          Open settings
-        </button>
-      </div>
-    )
+    return <EmptyState />
   }
 
   return (
