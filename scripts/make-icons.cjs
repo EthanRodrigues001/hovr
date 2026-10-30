@@ -1,6 +1,9 @@
 /**
- * Renders hovr's app icon (a glossy silver notch on a dark tile) to every size the
- * app and installer need.   node scripts/make-icons.cjs
+ * Renders hovr's mark and every icon size the app and installer need.
+ *   node scripts/make-icons.cjs
+ *
+ * The mark: a screen seen at an angle (a black body with a light face) with a notch
+ * hanging from the top edge of the face, with a camera dot in it.
  */
 const { Resvg } = require('@resvg/resvg-js')
 const { mkdirSync, writeFileSync } = require('node:fs')
@@ -8,68 +11,58 @@ const { join } = require('node:path')
 
 const root = join(__dirname, '..')
 
-/** The notch silhouette in a 512 box: hangs from the top edge with flared corners, deep rounded bottom. */
-const NOTCH = 'M70 22H442C400 22 378 46 378 102V204C378 272 326 328 256 328C186 328 134 272 134 204V102C134 46 112 22 70 22Z'
+/* ---- the mark, in a 512 box ---- */
+const BODY = '130,190 170,150 380,150 380,360 340,400 130,400' // extruded body, stroked round
+const FACE = { x: 184, y: 164, w: 182, h: 182, r: 18 } // light face (the "screen")
+const NOTCH = 'M205 158C230 158 241 168 241 192V206C241 232 257 250 275 250C293 250 309 232 309 206V192C309 168 320 158 345 158Z'
+const BARS = []
+// camera dot, cut out of the notch
+const DOT = { cx: 275, cy: 214, r: 11 }
+const STROKE = 26
 
-const tile = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#242424"/>
-      <stop offset="1" stop-color="#111"/>
-    </linearGradient>
-    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#050505"/>
-      <stop offset="1" stop-color="#000"/>
-    </linearGradient>
-    <linearGradient id="silver" x1="0.1" y1="0" x2="0.9" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="0.38" stop-color="#d9d9d9"/>
-      <stop offset="0.62" stop-color="#f4f4f4"/>
-      <stop offset="1" stop-color="#a9a9a9"/>
-    </linearGradient>
-    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0.2">
-      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
-      <stop offset="0.5" stop-color="#fff" stop-opacity="0.85"/>
-      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
-    </linearGradient>
-    <filter id="drop" x="-30%" y="-30%" width="160%" height="170%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="14"/>
-      <feOffset dy="16"/>
-      <feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
-      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <clipPath id="panel"><rect x="30" y="30" width="452" height="452" rx="104"/></clipPath>
-    <clipPath id="shape"><path d="${NOTCH}"/></clipPath>
+/** Mark drawn in `ink` with the face showing `face` (use for a flat tile). */
+function markFlat(ink, face) {
+  return `<g>
+    <polygon points="${BODY}" fill="${ink}" stroke="${ink}" stroke-width="${STROKE}" stroke-linejoin="round"/>
+    <rect x="${FACE.x}" y="${FACE.y}" width="${FACE.w}" height="${FACE.h}" rx="${FACE.r}" fill="${face}"/>
+    <path d="${NOTCH}" fill="${ink}"/>
+    <circle cx="${DOT.cx}" cy="${DOT.cy}" r="${DOT.r}" fill="${face}"/>
+  </g>`
+}
+
+/** Mark with a transparent face, via a mask (for tray / in-app single-colour use). */
+function markMasked(ink, id = 'cut') {
+  return `<defs>
+    <mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <polygon points="${BODY}" fill="#fff" stroke="#fff" stroke-width="${STROKE}" stroke-linejoin="round"/>
+      <rect x="${FACE.x}" y="${FACE.y}" width="${FACE.w}" height="${FACE.h}" rx="${FACE.r}" fill="#000"/>
+      <path d="${NOTCH}" fill="#fff"/>
+      <circle cx="${DOT.cx}" cy="${DOT.cy}" r="${DOT.r}" fill="#000"/>
+    </mask>
   </defs>
-  <rect x="14" y="14" width="484" height="484" rx="124" fill="url(#rim)"/>
-  <rect x="30" y="30" width="452" height="452" rx="104" fill="url(#bg)"/>
-  <g clip-path="url(#panel)" opacity="0.9">
-    <polygon points="-40,330 300,-10 372,62 32,402" fill="#fff" opacity="0.035"/>
-    <polygon points="200,540 560,180 560,260 280,540" fill="#fff" opacity="0.04"/>
-    <polygon points="330,-20 540,-20 540,190 400,50" fill="#fff" opacity="0.05"/>
-  </g>
-  <g clip-path="url(#panel)">
-  <g filter="url(#drop)">
-    <path d="${NOTCH}" fill="url(#silver)"/>
-  </g>
-  </g>
-  <g clip-path="url(#shape)">
-    <path d="M110 140L300 120L196 420L90 420Z" fill="url(#sheen)" opacity="0.55"/>
-  </g>
+  <rect width="512" height="512" fill="${ink}" mask="url(#${id})"/>`
+}
+
+const fit = (inner) => `<g transform="translate(256 256) scale(1.12) translate(-255 -275)">${inner}</g>`
+
+const tile = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect x="8" y="8" width="496" height="496" rx="120" fill="#e7e7e7"/>
+  ${fit(markFlat('#0b0b0b', '#e7e7e7'))}
 </svg>`
 
-/** Single-colour version for the tray (the system tints or shows it on any bar). */
-const mono = (color) => `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <path d="${NOTCH}" fill="${color}"/>
+const mono = (ink) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  ${markMasked(ink)}
+</svg>`
+
+/** For the tray, the mark fills the square so it stays legible at 16px. */
+const trayMono = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g transform="translate(256 256) scale(1.45) translate(-255 -275)">${markMasked('#ffffff')}</g>
 </svg>`
 
 function png(svg, size) {
   return new Resvg(svg, { fitTo: { mode: 'width', value: size } }).render().asPng()
 }
 
-/** ICO container holding PNG images. */
 function ico(sizes, svg) {
   const images = sizes.map((s) => ({ s, data: png(svg, s) }))
   const header = Buffer.alloc(6)
@@ -96,7 +89,7 @@ mkdirSync(out('resources/appx'), { recursive: true })
 
 writeFileSync(out('resources/icon.png'), png(tile, 512))
 writeFileSync(out('resources/icon.ico'), ico([16, 24, 32, 48, 64, 128, 256], tile))
-writeFileSync(out('resources/tray.png'), png(mono('#ffffff'), 64))
+writeFileSync(out('resources/tray.png'), png(trayMono, 64))
 for (const [name, size] of [
   ['Square150x150Logo.png', 150],
   ['Square44x44Logo.png', 44],
@@ -104,8 +97,6 @@ for (const [name, size] of [
 ]) {
   writeFileSync(out(`resources/appx/${name}`), png(tile, size))
 }
-
-// Wide tiles: the icon centred on near-black.
 for (const [name, w, h] of [
   ['Wide310x150Logo.png', 310, 150],
   ['SplashScreen.png', 620, 300]
@@ -118,9 +109,11 @@ for (const [name, w, h] of [
   writeFileSync(out(`resources/appx/${name}`), png(wide, w))
 }
 
-// In-app mark (flat, currentColor) and its SVG file.
+writeFileSync(out('src/assets/logo.svg'), `<svg width="200" height="200" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">${mono('#FFFFFF').replace(/\n\s*/g, '')}</svg>\n`)
+
+// Data the React Logo component embeds (kept in one place so the shapes never drift).
 writeFileSync(
-  out('src/assets/logo.svg'),
-  `<svg width="200" height="200" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="${NOTCH}" fill="#FFFFFF"/>\n</svg>\n`
+  out('src/lib/markShapes.ts'),
+  `/** Generated by scripts/make-icons.cjs. The hovr mark in a 512 box. */\nexport const MARK = ${JSON.stringify({ BODY, FACE, NOTCH, DOT, STROKE }, null, 2)} as const\n`
 )
-console.log('icons written; NOTCH path:', NOTCH)
+console.log('icons written')

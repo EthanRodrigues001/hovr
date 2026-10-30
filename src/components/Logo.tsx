@@ -1,9 +1,8 @@
-import { memo, forwardRef, type SVGProps } from 'react'
-
-const PATH = 'M70 22H442C400 22 378 46 378 102V204C378 272 326 328 256 328C186 328 134 272 134 204V102C134 46 112 22 70 22Z'
+import { memo, forwardRef, useId, type SVGProps } from 'react'
+import { MARK } from '../lib/markShapes'
 
 export interface LogoProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
-  /** Rendered size in px (or any CSS length). Square — the artwork is 1:1. */
+  /** Rendered size in px (or any CSS length). Square: the artwork is 1:1. */
   size?: number | string
   /**
    * Accessible label. Omit for decorative use (the default) and the SVG is
@@ -13,22 +12,21 @@ export interface LogoProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
 }
 
 /**
- * The hovr mark.
- *
- * Inherits `currentColor`, so it takes the surrounding text color and can be
- * transitioned via CSS `color` — which is what lets it tint on hover alongside
- * the rest of the blade without a second render path.
- *
- * The notch silhouette (same shape as the app icon).
+ * The hovr mark: a screen seen at an angle with a notch (and its camera dot) hanging
+ * from the top edge. Drawn in `currentColor` with the face cut out, so it takes the
+ * surrounding text colour. The shapes come from scripts/make-icons.cjs, which also
+ * renders the app icon, so the two never drift apart.
  */
 export const Logo = memo(
   forwardRef<SVGSVGElement, LogoProps>(function Logo({ size = 24, title, ...props }, ref) {
+    const mask = `logo-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
+    const { BODY, FACE, NOTCH, DOT, STROKE } = MARK
     return (
       <svg
         ref={ref}
         width={size}
         height={size}
-        viewBox="0 0 512 512"
+        viewBox="100 120 310 310"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         role={title ? 'img' : undefined}
@@ -37,7 +35,15 @@ export const Logo = memo(
         {...props}
       >
         {title ? <title>{title}</title> : null}
-        <path fillRule="evenodd" clipRule="evenodd" d={PATH} fill="currentColor" />
+        <defs>
+          <mask id={mask} maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+            <polygon points={BODY} fill="#fff" stroke="#fff" strokeWidth={STROKE} strokeLinejoin="round" />
+            <rect x={FACE.x} y={FACE.y} width={FACE.w} height={FACE.h} rx={FACE.r} fill="#000" />
+            <path d={NOTCH} fill="#fff" />
+            <circle cx={DOT.cx} cy={DOT.cy} r={DOT.r} fill="#000" />
+          </mask>
+        </defs>
+        <rect width="512" height="512" fill="currentColor" mask={`url(#${mask})`} />
       </svg>
     )
   })
