@@ -205,6 +205,25 @@ mkdirSync(out('resources/installer'), { recursive: true })
 writeFileSync(out('resources/installer/sidebar.bmp'), bmp(sidebar, 164, 314))
 writeFileSync(out('resources/installer/header.bmp'), bmp(header, 150, 57))
 
+// README banner: the mark and the name on white.
+{
+  const W = 1280
+  const H = 320
+  const size = 190
+  const s = size / VIEW.size
+  const textW = 470
+  const gap = 44
+  const x0 = (W - (size + gap + textW)) / 2
+  const y0 = (H - size) / 2
+  const banner = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <rect width="${W}" height="${H}" fill="#ffffff"/>
+  <g transform="translate(${x0} ${y0}) scale(${s}) translate(${-VIEW.x} ${-VIEW.y})">${markFlat('#0b0b0d', '#ffffff')}</g>
+  <text x="${x0 + size + gap}" y="${H / 2 + 46}" font-family="Segoe UI, Arial, sans-serif" font-size="136" font-weight="700" letter-spacing="14" fill="#0b0b0d">HOVR</text>
+</svg>`
+  mkdirSync(out('.github/assets'), { recursive: true })
+  writeFileSync(out('.github/assets/banner.png'), png(banner, W * 2))
+}
+
 writeFileSync(out('src/assets/logo.svg'), `${mono('#FFFFFF').replace(/\n\s*/g, '')}\n`)
 
 // Shapes the React Logo component draws, so the app and the icon never drift apart.
