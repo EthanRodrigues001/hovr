@@ -216,7 +216,7 @@ writeFileSync(out('resources/installer/header.bmp'), bmp(header, 150, 57))
   const x0 = (W - (size + gap + textW)) / 2
   const y0 = (H - size) / 2
   const banner = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <rect width="${W}" height="${H}" fill="#ffffff"/>
+  <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="28" fill="#ffffff" stroke="#e4e4e7" stroke-width="2"/>
   <g transform="translate(${x0} ${y0}) scale(${s}) translate(${-VIEW.x} ${-VIEW.y})">${markFlat('#0b0b0d', '#ffffff')}</g>
   <text x="${x0 + size + gap}" y="${H / 2 + 46}" font-family="Segoe UI, Arial, sans-serif" font-size="136" font-weight="700" letter-spacing="14" fill="#0b0b0d">HOVR</text>
 </svg>`
