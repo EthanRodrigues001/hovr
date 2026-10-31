@@ -1588,3 +1588,13 @@
 .sp > .sec {
   margin: 0;
 }
+
+/* the chart stretches to fill the band, however tall the provider list on the left gets */
+.sp > .sp-top .sp-chart {
+  display: flex;
+  flex-direction: column;
+}
+.sp-plot {
+  flex: 1;
+  min-height: 200px;
+}

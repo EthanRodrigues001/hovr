@@ -147,7 +147,8 @@ function Body({ report, days }: { report: HistoryReport; days: number }) {
         </div>
         <div className="sp-chart">
           <div className="sp-chart-title">{priced ? 'Daily cost' : 'Daily tokens'}</div>
-          <ResponsiveContainer width="100%" height={200}>
+          <div className="sp-plot">
+          <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 6, right: 4, bottom: 0, left: 0 }}>
               <defs>
                 {PROVIDERS.map((p) => (
@@ -166,6 +167,7 @@ function Body({ report, days }: { report: HistoryReport; days: number }) {
               ))}
             </AreaChart>
           </ResponsiveContainer>
+          </div>
           <div className="sp-legend">
             {report.byProvider.map((p) => (
               <span key={p.provider}><i style={{ background: PROVIDER_META[p.provider].accent }} />{PROVIDER_META[p.provider].short}</span>
