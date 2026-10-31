@@ -10,6 +10,7 @@ import type { HistoryReport } from '../../../shared/history'
 import { closeNotch } from '../../hooks/useNotchHover'
 import { edge } from '../../lib/edge'
 import { type AnalyticsTab, useStore } from '../../store/appStore'
+import { ScrollArea } from '../ScrollArea'
 import { Segmented } from '../ui'
 import { ForecastTab } from './ForecastTab'
 import { SpendTab } from './SpendTab'
@@ -72,11 +73,11 @@ export function AnalyticsView() {
           <X size={15} />
         </button>
       </header>
-      <div className="an-scroll">
+      <ScrollArea className="an-scroll">
         {tab === 'forecast' && <ForecastTab />}
         {tab === 'spend' && <SpendTab report={report} days={days} />}
         {tab === 'timeline' && <TimelineTab />}
-      </div>
+      </ScrollArea>
     </div>
   )
 }

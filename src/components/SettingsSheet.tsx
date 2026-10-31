@@ -6,6 +6,7 @@
 import { ArrowLeft, Info, Plug, SlidersHorizontal, X, type LucideIcon } from 'lucide-react'
 import { closeNotch } from '../hooks/useNotchHover'
 import { type SettingsTab, useStore } from '../store/appStore'
+import { ScrollArea } from './ScrollArea'
 import { AboutTab } from './settings/AboutTab'
 import { GeneralTab } from './settings/GeneralTab'
 import { ProvidersTab } from './settings/ProvidersTab'
@@ -40,11 +41,11 @@ export function SettingsSheet() {
         <button className="icon-btn sheet-close" onClick={closeNotch} title="Close" aria-label="Close">
           <X size={15} />
         </button>
-        <div className="sheet-scroll">
+        <ScrollArea className="sheet-scroll" wrapClass="sa-fill">
           {tab === 'providers' && <ProvidersTab />}
           {tab === 'general' && <GeneralTab />}
           {tab === 'about' && <AboutTab />}
-        </div>
+        </ScrollArea>
       </div>
     </div>
   )

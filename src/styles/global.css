@@ -75,3 +75,56 @@ p {
   transition-duration: 0.01ms !important;
   animation-duration: 0.01ms !important;
 }
+
+/* ---------- scroll areas: no scrollbar, fade + chevron instead ---------- */
+.sa {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sa-fill {
+  height: 100%;
+}
+.sa > .sa-scroller {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top, 0px), #000 calc(100% - var(--fade-bottom, 0px)), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top, 0px), #000 calc(100% - var(--fade-bottom, 0px)), transparent 100%);
+}
+.sa-scroller::-webkit-scrollbar {
+  display: none;
+}
+.sa-more {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 22px;
+  margin-left: -14px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(30, 30, 33, 0.92);
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  animation: sa-nudge 1.8s ease-in-out infinite;
+}
+.sa-more:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+@keyframes sa-nudge {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+:root[data-motion='reduce'] .sa-more {
+  animation: none;
+}

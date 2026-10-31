@@ -17,6 +17,7 @@ import { remainingTone } from '../lib/providers'
 import { useStore } from '../store/appStore'
 import { Logo } from './Logo'
 import { ProviderRing } from './ProviderRing'
+import { ScrollArea } from './ScrollArea'
 import { SettingsSheet } from './SettingsSheet'
 import { AnalyticsView } from './analytics/AnalyticsView'
 import { ToastStack } from './Toast'
@@ -151,11 +152,11 @@ function UsageLayer({ onContentHeight }: { onContentHeight: (h: number) => void 
           <X size={15} />
         </button>
       </div>
-      <div className="nbody">
+      <ScrollArea className="nbody">
         <div ref={contentRef}>
           <UsageView />
         </div>
-      </div>
+      </ScrollArea>
       <div className="nfoot" style={{ height: FOOTER_H }}>
         <span className="nfoot-text">{footerText}</span>
         <span className="spacer" />
