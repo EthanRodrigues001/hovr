@@ -61,7 +61,7 @@
       "deleteAppDataOnUninstall": false
     },
     "asarUnpack": [
-      "resources/icon.png"
+      "resources/toast.png"
     ]
   },
   "devDependencies": {

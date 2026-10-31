@@ -63,7 +63,7 @@ app.on('before-quit', () => {
 function registerToastIdentity(): void {
   if (process.platform !== 'win32') return
   const key = String.raw`HKCU\Software\Classes\AppUserModelId\com.hovr.app`
-  const icon = app.isPackaged ? join(process.resourcesPath, 'app.asar.unpacked', 'resources', 'icon.png') : join(app.getAppPath(), 'resources', 'icon.png')
+  const icon = app.isPackaged ? join(process.resourcesPath, 'app.asar.unpacked', 'resources', 'toast.png') : join(app.getAppPath(), 'resources', 'toast.png')
   const set = (name: string, value: string) => execFile('reg', ['add', key, '/v', name, '/t', 'REG_SZ', '/d', value, '/f'], () => {})
   set('DisplayName', 'HOVR')
   set('IconUri', icon)

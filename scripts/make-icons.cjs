@@ -78,16 +78,16 @@ const VIEW = { x: 224, y: 316, size: 286 } // square window around the mark
 const CANVAS = { w: 735, h: 919 }
 
 /** Mark in `ink` on a flat background `face` (for tiles). */
-function markFlat(ink, face) {
-  return `<path d="${BODY_PATH}" fill="${ink}"/><path d="${FACE_PATH}" fill="${face}"/><g transform="${shear}"><path d="${NOTCH.d}" fill="${ink}"/>${notchItems(face, 'rgba(231,231,231,0.3)')}</g>`
+function markFlat(ink, face, simple = false) {
+  return `<path d="${BODY_PATH}" fill="${ink}"/><path d="${FACE_PATH}" fill="${face}"/><g transform="${shear}"><path d="${NOTCH.d}" fill="${ink}"/>${simple ? '' : notchItems(face, 'rgba(231,231,231,0.3)')}</g>`
 }
 
 /** Mark with a transparent face, via a mask (tray, in-app, single colour). */
-function markMasked(ink, id = 'cut') {
+function markMasked(ink, id = 'cut', simple = false) {
   return `<defs>
     <mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${CANVAS.w}" height="${CANVAS.h}">
       <path d="${BODY_PATH}" fill="#fff"/><path d="${FACE_PATH}" fill="#000"/>
-      <g transform="${shear}"><path d="${NOTCH.d}" fill="#fff"/>${notchItems('#000', 'rgba(0,0,0,0.35)')}</g>
+      <g transform="${shear}"><path d="${NOTCH.d}" fill="#fff"/>${simple ? '' : notchItems('#000', 'rgba(0,0,0,0.35)')}</g>
     </mask>
   </defs>
   <rect width="${CANVAS.w}" height="${CANVAS.h}" fill="${ink}" mask="url(#${id})"/>`
@@ -97,6 +97,11 @@ const cx0 = VIEW.x + VIEW.size / 2
 const cy0 = VIEW.y + VIEW.size / 2
 const fit = (inner, scale) => `<g transform="translate(256 256) scale(${scale}) translate(${-cx0} ${-cy0})">${inner}</g>`
 
+/** At 64px and below the rings and numbers are a smudge, so small icons keep just the plain notch. */
+const tileSvg = (simple) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect x="8" y="8" width="496" height="496" rx="120" fill="#e7e7e7"/>
+  ${fit(markFlat('#0b0b0b', '#e7e7e7', simple), 1.3)}
+</svg>`
 const tile = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <rect x="8" y="8" width="496" height="496" rx="120" fill="#e7e7e7"/>
   ${fit(markFlat("#0b0b0b", "#e7e7e7"), 1.3)}
@@ -107,15 +112,15 @@ const mono = (ink) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VIEW.x
 </svg>`
 
 const trayMono = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  ${fit(markMasked('#ffffff'), 1.75)}
+  ${fit(markMasked('#ffffff', 'cut', true), 1.75)}
 </svg>`
 
 function png(svg, size) {
   return new Resvg(svg, { fitTo: { mode: 'width', value: size } }).render().asPng()
 }
 
-function ico(sizes, svg) {
-  const images = sizes.map((s) => ({ s, data: png(svg, s) }))
+function ico(sizes, svgFor) {
+  const images = sizes.map((s) => ({ s, data: png(svgFor(s), s) }))
   const header = Buffer.alloc(6)
   header.writeUInt16LE(0, 0)
   header.writeUInt16LE(1, 2)
@@ -139,7 +144,8 @@ const out = (p) => join(root, p)
 mkdirSync(out('resources/appx'), { recursive: true })
 
 writeFileSync(out('resources/icon.png'), png(tile, 512))
-writeFileSync(out('resources/icon.ico'), ico([16, 24, 32, 48, 64, 128, 256], tile))
+writeFileSync(out('resources/icon.ico'), ico([16, 24, 32, 48, 64, 128, 256], (s) => (s <= 64 ? tileSvg(true) : tile)))
+writeFileSync(out('resources/toast.png'), png(tileSvg(true), 256))
 writeFileSync(out('resources/tray.png'), png(trayMono, 64))
 for (const [name, size] of [
   ['Square150x150Logo.png', 150],
