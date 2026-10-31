@@ -15,6 +15,7 @@ import { PATHS } from '../../store/paths'
 import { loadSettings } from '../../store/settings'
 import { buildReport } from './aggregate'
 import { readAntigravityDb } from './antigravityDb'
+import { readCursorHistory } from './cursorEvents'
 import { initialCodexState, parseClaudeLine, parseCodexLine, type UsageRecord } from './parse'
 import { parseRateTable, type RateTable } from './pricing'
 
@@ -293,6 +294,12 @@ export function getHistory(daysRequested: number, env: NodeJS.ProcessEnv = proce
         scanned.push('antigravity')
         records.push(...agy)
       }
+    }
+
+    const cursor = await readCursorHistory(days, env)
+    if (cursor.length > 0) {
+      scanned.push('cursor')
+      records.push(...cursor)
     }
 
     const prices = loadSettings().showCostEstimates ? await loadPrices() : null

@@ -4,7 +4,7 @@
  * "Input" is fresh (uncached) input; cache reads and writes are tracked apart so
  * the totals are not inflated by cached context being re-read on every request.
  */
-export type HistoryProvider = 'claude' | 'codex' | 'antigravity'
+export type HistoryProvider = 'claude' | 'codex' | 'antigravity' | 'cursor'
 
 export interface TokenTotals {
   input: number

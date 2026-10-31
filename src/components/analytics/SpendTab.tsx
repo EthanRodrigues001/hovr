@@ -14,7 +14,7 @@ import { Segmented } from '../ui'
 import { ReportGate } from './ReportGate'
 import { TickBar } from './TickBar'
 
-const PROVIDERS: readonly HistoryProvider[] = ['claude', 'codex', 'antigravity']
+const PROVIDERS: readonly HistoryProvider[] = ['claude', 'codex', 'antigravity', 'cursor']
 const KIND_COLORS = { input: '#52525b', cacheRead: '#71717a', cacheWrite: '#a1a1aa', output: '#e4e4e7' } as const
 
 type DayDatum = { date: string } & Record<string, number | string>
@@ -82,7 +82,9 @@ function Body({ report, days }: { report: HistoryReport; days: number }) {
         antigravity: priced ? (d.costByProvider.antigravity ?? 0) : (d.byProvider.antigravity ?? 0),
         claude_t: d.byProvider.claude ?? 0,
         codex_t: d.byProvider.codex ?? 0,
-        antigravity_t: d.byProvider.antigravity ?? 0
+        antigravity_t: d.byProvider.antigravity ?? 0,
+        cursor: priced ? (d.costByProvider.cursor ?? 0) : (d.byProvider.cursor ?? 0),
+        cursor_t: d.byProvider.cursor ?? 0
       })),
     [report, priced]
   )

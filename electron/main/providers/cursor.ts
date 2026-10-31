@@ -69,7 +69,7 @@ export function extractCursorIdeToken(db: Buffer): string | undefined {
 
 type TokenRead = { token: string; source: 'env' | 'cli' | 'ide' } | { apiKeyOnly: true } | { missing: true }
 
-async function readToken(env: NodeJS.ProcessEnv): Promise<TokenRead> {
+export async function readCursorToken(env: NodeJS.ProcessEnv): Promise<TokenRead> {
   const fromEnv = env.CURSOR_AUTH_TOKEN?.trim()
   if (fromEnv) return { token: fromEnv, source: 'env' }
   if (env.CURSOR_API_KEY?.trim()) return { apiKeyOnly: true }
@@ -89,7 +89,7 @@ async function readToken(env: NodeJS.ProcessEnv): Promise<TokenRead> {
 
 export async function readCursorUsage(env: NodeJS.ProcessEnv = process.env): Promise<UsageLimits> {
   const checkedAt = new Date().toISOString()
-  const auth = await readToken(env)
+  const auth = await readCursorToken(env)
   if ('apiKeyOnly' in auth) {
     return makeUnavailableLimits({
       checkedAt,
@@ -123,7 +123,7 @@ export const cursorDriver: ProviderDriver = {
   async detect(env = process.env) {
     const installed =
       (await findOnPath(['cursor-agent', 'cursor'], env)) !== undefined || (await exists(appDir(env)))
-    const auth = await readToken(env)
+    const auth = await readCursorToken(env)
     const authenticated = !('missing' in auth) && !('apiKeyOnly' in auth)
     return {
       installed,
