@@ -25,3 +25,6 @@ reference/*
 
 installer/payload/
 dist-setup/
+
+.agents/
+skills-lock.json

@@ -4,12 +4,12 @@
 
 **See how much of your AI coding tools' usage limits you have left, in a notch at the top of your screen.**
 
-[![Release](https://shieldcn.dev/github/EthanRodrigues001/hovr/release.svg?size=sm)](https://github.com/EthanRodrigues001/hovr/releases/latest)
-[![Downloads](https://shieldcn.dev/github/downloads/EthanRodrigues001/hovr.svg?size=sm)](https://github.com/EthanRodrigues001/hovr/releases)
-[![License](https://shieldcn.dev/github/EthanRodrigues001/hovr/license.svg?size=sm)](LICENSE)
-[![Platform](https://shieldcn.dev/badge/platform-Windows-blue.svg?size=sm)](#install)
-[![Electron](https://shieldcn.dev/badge/Electron-34-blue.svg?size=sm)](https://www.electronjs.org)
-[![TypeScript](https://shieldcn.dev/badge/TypeScript-5-blue.svg?size=sm)](https://www.typescriptlang.org)
+<a href="https://github.com/EthanRodrigues001/hovr/releases/latest">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/group/github/release/EthanRodrigues001/hovr+github/license/EthanRodrigues001/hovr+badge/platform-Windows+badge/Electron-34.svg?size=xs&variant=secondary&mode=dark" />
+    <img alt="Release, license, platform and Electron version" src="https://shieldcn.dev/group/github/release/EthanRodrigues001/hovr+github/license/EthanRodrigues001/hovr+badge/platform-Windows+badge/Electron-34.svg?size=xs&variant=secondary&mode=light" />
+  </picture>
+</a>
 
 [Install](#install) · [Features](#features) · [Supported tools](#supported-tools) · [Privacy](#what-it-touches) · [Develop](#develop)
 
