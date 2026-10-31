@@ -17,15 +17,14 @@ export default function App() {
   useNotchHover()
 
   useEffect(() => {
-    const { hydrate, setSettings, setUsageState, pushToast, setUpdateAvailable, setUpdateDownloaded } =
+    const { hydrate, setSettings, setUsageState, pushToast, setUpdateStatus } =
       useStore.getState()
     void hydrate()
     const offs = [
       edge.onSettings(setSettings),
       edge.onUsage(setUsageState),
       edge.onToast(pushToast),
-      edge.onUpdateAvailable(setUpdateAvailable),
-      edge.onUpdateDownloaded(setUpdateDownloaded)
+      edge.onUpdateStatus(setUpdateStatus)
     ]
     return () => offs.forEach((off) => off())
   }, [])

@@ -8,8 +8,6 @@ import { edge } from '../../lib/edge'
 
 export function AboutTab() {
   const version = useStore((s) => s.version)
-  const update = useStore((s) => s.updateInfo)
-  const installUpdate = useStore((s) => s.installUpdate)
 
   return (
     <div className="tab-body">
@@ -21,11 +19,6 @@ export function AboutTab() {
           <h2>HOVR</h2>
           <p className="muted">Version {version || '…'} · usage limits for your AI coding tools</p>
         </div>
-        {update && (
-          <button className="btn btn-primary" onClick={() => void installUpdate()}>
-            {update.downloaded ? `Restart to update to ${update.latestVersion}` : `Update ${update.latestVersion} available`}
-          </button>
-        )}
       </div>
 
       <section className="about-block">

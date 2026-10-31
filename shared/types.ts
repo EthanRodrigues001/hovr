@@ -71,3 +71,10 @@ export const DEFAULT_SETTINGS: Settings = {
   showCostEstimates: true,
   lastSeenChangelogVersion: undefined
 }
+
+/** Where the in-app updater is: shown in Settings -> Updates, the notch header and the tray. */
+export interface UpdateStatus {
+  phase: 'idle' | 'checking' | 'downloading' | 'ready' | 'error'
+  /** The new version, once one is found. */
+  version?: string
+}

@@ -28,6 +28,8 @@ const api: EdgeApi = {
   /* Renderer -> Main */
   loadState: () => invoke('state:load'),
   installUpdate: () => invoke('app:install-update'),
+  getUpdateStatus: () => invoke('update:status'),
+  checkForUpdates: () => invoke('update:check'),
   quitApp: () => invoke('app:quit'),
   getDisplays: () => invoke('displays:list'),
   updateSettings: (patch: Partial<Settings>) => invoke('settings:update', patch),
@@ -45,8 +47,7 @@ const api: EdgeApi = {
   onOpenSettings: (cb) => on('window:open-settings', cb),
   onCursor: (cb) => on('window:cursor', cb),
   onToast: (cb) => on('ui:toast', cb),
-  onUpdateAvailable: (cb) => on('app:update-available', cb),
-  onUpdateDownloaded: (cb) => on('app:update-downloaded', cb)
+  onUpdateStatus: (cb) => on('app:update-status', cb)
 }
 
 contextBridge.exposeInMainWorld('edge', api)

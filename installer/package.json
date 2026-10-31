@@ -1,6 +1,6 @@
 {
   "name": "hovr-installer",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "HOVR setup",
   "author": "Ethan Rodrigues",
   "main": "main.cjs",

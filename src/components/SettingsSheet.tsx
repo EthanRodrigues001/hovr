@@ -3,17 +3,19 @@
  * right. Providers is where tools are connected / switched off; General holds the
  * notch behaviour; About holds version, update and privacy notes.
  */
-import { ArrowLeft, Info, Plug, SlidersHorizontal, X, type LucideIcon } from 'lucide-react'
+import { ArrowLeft, Download, Info, Plug, SlidersHorizontal, X, type LucideIcon } from 'lucide-react'
 import { closeNotch } from '../hooks/useNotchHover'
 import { type SettingsTab, useStore } from '../store/appStore'
 import { ScrollArea } from './ScrollArea'
 import { AboutTab } from './settings/AboutTab'
 import { GeneralTab } from './settings/GeneralTab'
+import { UpdatesTab } from './settings/UpdatesTab'
 import { ProvidersTab } from './settings/ProvidersTab'
 
 const TABS: ReadonlyArray<{ id: SettingsTab; label: string; Icon: LucideIcon }> = [
   { id: 'providers', label: 'Providers', Icon: Plug },
   { id: 'general', label: 'General', Icon: SlidersHorizontal },
+  { id: 'updates', label: 'Updates', Icon: Download },
   { id: 'about', label: 'About', Icon: Info }
 ]
 
@@ -44,6 +46,7 @@ export function SettingsSheet() {
         <ScrollArea className="sheet-scroll" wrapClass="sa-fill">
           {tab === 'providers' && <ProvidersTab />}
           {tab === 'general' && <GeneralTab />}
+          {tab === 'updates' && <UpdatesTab />}
           {tab === 'about' && <AboutTab />}
         </ScrollArea>
       </div>

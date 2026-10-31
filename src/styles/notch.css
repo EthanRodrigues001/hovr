@@ -939,3 +939,34 @@ kbd {
 .pcount + .pgroup h3 {
   margin-top: 24px;
 }
+
+/* update button in the header: only while a new version is downloading or ready */
+.update-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 6px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #000;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.update-btn:disabled {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--text-tertiary);
+  cursor: default;
+}
+.upd-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.upd-ver {
+  font-size: 15px;
+  font-weight: 600;
+}

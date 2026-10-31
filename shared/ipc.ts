@@ -9,7 +9,7 @@
  *   - `Renderer -> Main` calls (invoke/handle) are listed in `InvokeMap`.
  *   - `Main -> Renderer` events (send/on) are listed in `EventMap`.
  */
-import type { Settings } from './types'
+import type { Settings, UpdateStatus } from './types'
 import type { HistoryReport } from './history'
 import type { UsageState } from './usage'
 
@@ -29,6 +29,12 @@ export interface InvokeMap {
 
   /** Trigger a download of the already-available update and quit-and-install. */
   'app:install-update': { args: []; result: void }
+
+  /** Where the updater is right now. */
+  'update:status': { args: []; result: UpdateStatus }
+
+  /** Look for a new version now. Progress arrives as `app:update-status`. */
+  'update:check': { args: []; result: void }
 
   /** Quit the application process. */
   'app:quit': { args: []; result: void }
@@ -65,10 +71,8 @@ export interface EventMap {
   'usage:update': [state: UsageState]
   /** Transient user-facing notice, shown as a toast. */
   'ui:toast': [toast: { id: string; message: string; tone: 'info' | 'error' }]
-  /** Fired by electron-updater when a new update is available for GitHub builds. */
-  'app:update-available': [info: { version: string }]
-  /** Fired by electron-updater when the update has been fully downloaded and is ready to install. */
-  'app:update-downloaded': [info: { version: string }]
+  /** The updater changed state (checking, downloading, ready, ...). */
+  'app:update-status': [status: UpdateStatus]
   /**
    * Streamed by the main-process cursor poll while the cursor is near the notch
    * window (or the notch is open), and once more when it leaves. `x`/`y` are

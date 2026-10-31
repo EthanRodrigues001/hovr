@@ -37,11 +37,8 @@ export const pushState = {
   openSettings(): void {
     send('window:open-settings')
   },
-  updateAvailable(info: { version: string }): void {
-    send('app:update-available', info)
-  },
-  updateDownloaded(info: { version: string }): void {
-    send('app:update-downloaded', info)
+  updateStatus(status: import('../../shared/types').UpdateStatus): void {
+    send('app:update-status', status)
   }
 }
 

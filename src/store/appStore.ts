@@ -6,7 +6,7 @@
  */
 import { create } from 'zustand'
 import { edge } from '../lib/edge'
-import type { Settings } from '../../shared/types'
+import type { Settings, UpdateStatus } from '../../shared/types'
 import { DEFAULT_SETTINGS } from '../../shared/types'
 import type { ProviderId, ProviderStatus, UsageLimits, UsageState } from '../../shared/usage'
 
@@ -18,7 +18,7 @@ export interface ToastMsg {
 }
 
 export type View = 'usage' | 'settings' | 'analytics'
-export type SettingsTab = 'providers' | 'general' | 'about'
+export type SettingsTab = 'providers' | 'general' | 'updates' | 'about'
 export type AnalyticsTab = 'forecast' | 'spend' | 'timeline'
 
 interface AppState {
@@ -39,7 +39,7 @@ interface AppState {
   analyticsTab: AnalyticsTab
 
   toasts: ToastMsg[]
-  updateInfo: { latestVersion: string; downloaded: boolean } | null
+  updateStatus: UpdateStatus
 
   hydrate: () => Promise<void>
   setSettings: (next: Settings) => void
@@ -57,8 +57,8 @@ interface AppState {
   pushToast: (toast: ToastMsg) => void
   dismissToast: (id: string) => void
 
-  setUpdateAvailable: (info: { version: string }) => void
-  setUpdateDownloaded: (info: { version: string }) => void
+  setUpdateStatus: (status: UpdateStatus) => void
+  checkForUpdates: () => Promise<void>
   installUpdate: () => Promise<void>
 }
 
@@ -79,11 +79,11 @@ export const useStore = create<AppState>((set, get) => ({
   analyticsTab: 'forecast',
 
   toasts: [],
-  updateInfo: null,
+  updateStatus: { phase: 'idle' },
 
   async hydrate() {
-    const [{ settings, version }, usage] = await Promise.all([edge.loadState(), edge.getUsage()])
-    set({ settings, version, usage: usage.usage, providers: usage.providers, hydrated: true })
+    const [{ settings, version }, usage, updateStatus] = await Promise.all([edge.loadState(), edge.getUsage(), edge.getUpdateStatus()])
+    set({ settings, version, usage: usage.usage, providers: usage.providers, updateStatus, hydrated: true })
   },
 
   setSettings: (next) => set({ settings: next }),
@@ -120,7 +120,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
   dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 
-  setUpdateAvailable: (info) => set({ updateInfo: { latestVersion: info.version, downloaded: false } }),
-  setUpdateDownloaded: (info) => set({ updateInfo: { latestVersion: info.version, downloaded: true } }),
+  setUpdateStatus: (updateStatus) => set({ updateStatus }),
+  checkForUpdates: () => edge.checkForUpdates(),
   installUpdate: () => edge.installUpdate()
 }))

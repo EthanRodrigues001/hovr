@@ -3,7 +3,9 @@
 /** Mutable runtime flags (kept separate from the frozen config object). */
 export const runtime = {
   /** Set true only while the app is genuinely quitting (tray -> Quit). */
-  quitting: false
+  quitting: false,
+  /** Tray -> Pause HOVR. Never saved: HOVR is always on after a restart. */
+  paused: false
 }
 
 export const APP_CONFIG = {

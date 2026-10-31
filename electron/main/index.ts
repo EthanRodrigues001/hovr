@@ -106,7 +106,7 @@ app.whenReady().then(() => {
   // Alt+C toggles the notch (throttled so key repeat can't flicker it).
   let lastToggleTime = 0
   const registered = globalShortcut.register('Alt+C', () => {
-    if (runtime.quitting) return
+    if (runtime.quitting || runtime.paused) return
     const now = Date.now()
     if (now - lastToggleTime < 500) return
     lastToggleTime = now

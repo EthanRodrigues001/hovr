@@ -60,6 +60,8 @@ if (import.meta.env.DEV && params.get('mock')) {
   const edge: EdgeApi = {
     loadState: async () => ({ settings: { ...DEFAULT_SETTINGS, ...(params.get('compact') ? { collapsedStyle: 'compact' as const } : {}) }, version: 'dev' }),
     installUpdate: async () => undefined,
+    getUpdateStatus: async () => ({ phase: 'idle' as const }),
+    checkForUpdates: async () => undefined,
     quitApp: async () => undefined,
     updateSettings: async (patch) => ({ ...DEFAULT_SETTINGS, ...patch }),
     setInteractive: async () => undefined,
@@ -118,8 +120,7 @@ if (import.meta.env.DEV && params.get('mock')) {
     onOpenSettings: none,
     onCursor: none,
     onToast: none,
-    onUpdateAvailable: none,
-    onUpdateDownloaded: none
+    onUpdateStatus: none
   }
   ;(window as unknown as { edge: EdgeApi }).edge = edge
 

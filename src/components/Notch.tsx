@@ -7,7 +7,7 @@
  * The inverse-corner "flares" at the top blend the notch into the screen edge.
  */
 import { AnimatePresence, motion } from 'framer-motion'
-import { BarChart3, ChevronRight, RefreshCw, Settings as Cog, X } from 'lucide-react'
+import { BarChart3, ChevronRight, Download, RefreshCw, Settings as Cog, X } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { NOTCH } from '../../shared/notch'
 import { primaryRemainingPercent } from '../../shared/usageMath'
@@ -106,6 +106,8 @@ function UsageLayer({ onContentHeight }: { onContentHeight: (h: number) => void 
   const refresh = useStore((s) => s.refresh)
   const openSettings = useStore((s) => s.openSettings)
   const openAnalytics = useStore((s) => s.openAnalytics)
+  const update = useStore((s) => s.updateStatus)
+  const installUpdate = useStore((s) => s.installUpdate)
   const contentRef = useRef<HTMLDivElement>(null)
   const usage = useStore((s) => s.usage)
   const providerCount = useStore((s) => s.providers.filter((p) => p.installed).length)
@@ -139,6 +141,17 @@ function UsageLayer({ onContentHeight }: { onContentHeight: (h: number) => void 
         <Logo size={15} />
         <span className="nhead-title">HOVR</span>
         <span className="spacer" />
+        {(update.phase === 'ready' || update.phase === 'downloading') && (
+          <button
+            className="update-btn"
+            disabled={update.phase !== 'ready'}
+            onClick={() => void installUpdate()}
+            title={update.phase === 'ready' ? `Restart to update to ${update.version}` : `Downloading ${update.version ?? 'the update'}`}
+          >
+            <Download size={13} />
+            {update.phase === 'ready' ? 'Update' : 'Downloading'}
+          </button>
+        )}
         <button className={`icon-btn ${refreshing ? 'spin' : ''}`} onClick={() => void refresh()} title="Refresh now" aria-label="Refresh now">
           <RefreshCw size={15} />
         </button>

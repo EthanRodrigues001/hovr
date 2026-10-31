@@ -12,7 +12,7 @@ import { type InvokeMap, type InvokeChannel } from '../../shared/ipc'
 import { loadSettings, saveSettings, pushState } from './state'
 import { setInteractive, repositionWindow, getDisplayListOptions, popUpAndRetract } from './window'
 import { rebuildTrayMenu } from './tray'
-import { quitAndInstallUpdate } from './updater'
+import { checkForUpdatesNow, getUpdateStatus, quitAndInstallUpdate } from './updater'
 import { getHistory } from './history/historyService'
 import { readSamples } from './usageSamples'
 import { sendTestAlert } from './alerts'
@@ -62,6 +62,11 @@ export function registerIpc(): void {
     if (isStoreBuild()) return
     console.log('[IPC] app:install-update requested by renderer — calling quitAndInstallUpdate')
     quitAndInstallUpdate()
+  })
+
+  handle('update:status', () => getUpdateStatus())
+  handle('update:check', () => {
+    if (!isStoreBuild()) checkForUpdatesNow()
   })
 
   handle('app:quit', () => {

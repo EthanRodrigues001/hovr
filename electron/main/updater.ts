@@ -1,4 +1,5 @@
-import { app } from 'electron'
+import { Notification, app } from 'electron'
+import type { UpdateStatus } from '../../shared/types'
 import { BRAND } from '../../shared/brand'
 import { isStoreBuild } from './ipc'
 import { pushState } from './state'
@@ -8,6 +9,43 @@ import { pushState } from './state'
 // quitAndInstall trigger must use this exact reference.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _autoUpdater: any = null
+
+let status: UpdateStatus = { phase: 'idle' }
+let onChange: (() => void) | null = null
+let manualCheck = false
+
+export const getUpdateStatus = (): UpdateStatus => status
+export const onUpdateStatusChange = (fn: () => void): void => {
+  onChange = fn
+}
+const setStatus = (next: UpdateStatus): void => {
+  status = next
+  onChange?.()
+  pushState.updateStatus(next)
+}
+const tell = (body: string): void => {
+  if (Notification.isSupported()) new Notification({ title: 'HOVR', body }).show()
+}
+
+/** Tray -> Check for updates. Says so when there is nothing new. */
+export function checkForUpdatesNow(): void {
+  if (!_autoUpdater || status.phase === 'checking' || status.phase === 'downloading' || status.phase === 'ready') return
+  manualCheck = true
+  void runCheck()
+}
+
+async function runCheck(): Promise<void> {
+  if (!_autoUpdater) return
+  setStatus({ phase: 'checking' })
+  try {
+    await _autoUpdater.checkForUpdates()
+  } catch (err) {
+    console.warn('[AutoUpdater] checkForUpdates failed:', err instanceof Error ? err.message : err)
+    setStatus({ phase: 'error' })
+    if (manualCheck) tell('Could not check for updates. Try again in a moment.')
+    manualCheck = false
+  }
+}
 
 /**
  * Called from ipc.ts when the renderer clicks "Restart to Update".
@@ -65,30 +103,34 @@ export function initAutoUpdater(): void {
 
     autoUpdater.on('update-available', (info: { version: string }) => {
       console.log('[AutoUpdater] New update available on GitHub:', info.version)
-      pushState.updateAvailable({ version: info.version })
+      setStatus({ phase: 'downloading', version: info.version })
+      manualCheck = false
     })
 
     autoUpdater.on('update-not-available', (info: { version: string }) => {
       console.log('[AutoUpdater] App is up to date. Latest release:', info.version, 'Current:', app.getVersion())
+      setStatus({ phase: 'idle' })
+      if (manualCheck) tell(`You are on the latest version (${app.getVersion()}).`)
+      manualCheck = false
     })
 
     autoUpdater.on('update-downloaded', (info: { version: string }) => {
       console.log('[AutoUpdater] Update downloaded and ready to install:', info.version)
-      pushState.updateDownloaded({ version: info.version })
+      setStatus({ phase: 'ready', version: info.version })
+      tell(`HOVR ${info.version} is ready. Right-click the tray icon and choose Restart to update.`)
     })
 
     autoUpdater.on('error', (err: Error | string) => {
       const msg = typeof err === 'string' ? err : err?.message
       console.warn('[AutoUpdater] Update check error:', msg)
+      if (status.phase === 'checking' || status.phase === 'downloading') setStatus({ phase: 'error' })
     })
 
-    // Initiate background update check 3 seconds after startup
-    setTimeout(() => {
-      autoUpdater.checkForUpdates().catch((err: Error | string) => {
-        const msg = typeof err === 'string' ? err : err?.message
-        console.warn('[AutoUpdater] checkForUpdates failed:', msg)
-      })
-    }, 3000)
+    // Check 3 seconds after startup, then every 4 hours while HOVR stays open.
+    setTimeout(() => void runCheck(), 3000)
+    setInterval(() => {
+      if (status.phase === 'idle' || status.phase === 'error') void runCheck()
+    }, 4 * 60 * 60 * 1000)
   } catch (err) {
     console.error('[AutoUpdater] Initialization failed:', err)
   }

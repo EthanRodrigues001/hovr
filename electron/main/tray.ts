@@ -19,6 +19,9 @@ import {
 } from './window'
 import { pushState } from './state'
 import { refreshUsage } from './usageService'
+import { runtime } from './config'
+import { setPaused } from './pause'
+import { checkForUpdatesNow, getUpdateStatus, onUpdateStatusChange, quitAndInstallUpdate } from './updater'
 
 let tray: Tray | null = null
 let rebuildMenu: (() => void) | null = null
@@ -66,10 +69,32 @@ export function createTray(): Tray {
 
   const rebuild = () => {
     const settings = loadSettings()
+    const paused = runtime.paused
+    const upd = getUpdateStatus()
+    const updateItem: Electron.MenuItemConstructorOptions =
+      upd.phase === 'ready'
+        ? { label: `Restart to update to ${upd.version}`, click: () => quitAndInstallUpdate() }
+        : upd.phase === 'downloading'
+          ? { label: `Downloading update ${upd.version ?? ''}...`.replace('  ', ' '), enabled: false }
+          : upd.phase === 'checking'
+            ? { label: 'Checking for updates...', enabled: false }
+            : { label: 'Check for updates', click: () => checkForUpdatesNow() }
+    tray?.setToolTip(upd.phase === 'ready' ? `HOVR - update ${upd.version} ready` : upd.phase === 'downloading' ? 'HOVR - downloading update' : 'HOVR')
     tray?.setContextMenu(
       Menu.buildFromTemplate([
         {
+          label: 'Enabled',
+          type: 'checkbox',
+          checked: !paused,
+          click: (item) => {
+            setPaused(!item.checked)
+            rebuild()
+          }
+        },
+        { type: 'separator' },
+        {
           label: 'Show usage',
+          enabled: !paused,
           click: () => {
             setVisible(true)
             pushState.togglePanel()
@@ -77,12 +102,13 @@ export function createTray(): Tray {
         },
         {
           label: 'Settings',
+          enabled: !paused,
           click: () => {
             setVisible(true)
             pushState.openSettings()
           }
         },
-        { label: 'Refresh now', click: () => void refreshUsage(true) },
+        { label: 'Refresh now', enabled: !paused, click: () => void refreshUsage(true) },
         { type: 'separator' },
         {
           label: 'Ignore hover in fullscreen apps',
@@ -95,12 +121,14 @@ export function createTray(): Tray {
         },
         { label: 'Display', submenu: buildDisplaySubmenu() },
         { type: 'separator' },
+        updateItem,
         { label: 'Quit HOVR', click: () => app.quit() }
       ])
     )
   }
 
   tray.on('click', () => {
+    if (runtime.paused) return
     setVisible(true)
     pushState.togglePanel()
   })
@@ -116,6 +144,7 @@ export function createTray(): Tray {
   screen.on('display-metrics-changed', rebuild)
   registerWindowRepositionListener(rebuild)
 
+  onUpdateStatusChange(rebuild)
   rebuildMenu = rebuild
   rebuild()
   return tray
