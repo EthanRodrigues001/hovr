@@ -47,7 +47,7 @@ export const Logo = memo(
             <path d={FACE_PATH} fill="#000" />
             <g transform={`matrix(1 0 ${NOTCH.lean} 1 ${-NOTCH.lean * NOTCH.top} 0)`}>
               <path d={NOTCH.d} fill="#fff" />
-              {NOTCH.items.map(({ cx, cy, pct }) => (
+              {NOTCH.items.map(({ cx, cy, pct, text }) => (
                 <g key={cx}>
                   {pct >= 100 ? (
                     <circle cx={cx} cy={cy} r={NOTCH.r} fill="none" stroke="#000" strokeWidth={NOTCH.w} />
@@ -57,7 +57,18 @@ export const Logo = memo(
                       <path d={arc(cx, cy, NOTCH.r, pct)} fill="none" stroke="#000" strokeWidth={NOTCH.w} strokeLinecap="round" />
                     </>
                   )}
-                  <rect x={cx + NOTCH.bar.dx} y={cy - NOTCH.bar.h / 2} width={NOTCH.bar.w} height={NOTCH.bar.h} rx={NOTCH.bar.h / 2} fill="#000" />
+                  {[...text].map((ch, i) => (
+                    <path
+                      key={i}
+                      d={NOTCH.glyphs[ch as keyof typeof NOTCH.glyphs]}
+                      transform={`translate(${cx + NOTCH.r + NOTCH.w / 2 + 4 + i * NOTCH.adv * NOTCH.k} ${cy - 3.5 * NOTCH.k}) scale(${NOTCH.k})`}
+                      fill="none"
+                      stroke="#000"
+                      strokeWidth={NOTCH.gw}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  ))}
                 </g>
               ))}
             </g>

@@ -23,18 +23,29 @@ const { BODY_PATH, FACE_PATH } = require('./markTrace.json')
  */
 const LEAN = 0.11
 const TOP = 348 // y of the face's top edge
+// Digits and % as strokes in a 4 x 7 box, so the notch can show real "63%" at any size.
+const GLYPHS = {
+  '3': 'M0.4 0.8C1 0.3 1.6 0.2 2 0.2C3.2 0.2 3.8 1 3.8 1.8C3.8 2.8 3 3.4 1.8 3.4C3 3.4 4 4 4 5.2C4 6.4 3.2 7 2 7C1.2 7 0.6 6.8 0.2 6.2',
+  '4': 'M3 7V0.2L0.2 5H4',
+  '6': 'M3.2 0.3C1 0.3 0.2 2 0.2 4C0.2 6.2 1 7 2 7C3.2 7 3.8 6 3.8 5C3.8 4 3 3.2 2 3.2C1.2 3.2 0.5 3.7 0.2 4.5',
+  '8': 'M2 3.4C1 3.4 0.4 2.8 0.4 1.8C0.4 0.8 1 0.2 2 0.2C3 0.2 3.6 0.8 3.6 1.8C3.6 2.8 3 3.4 2 3.4C0.8 3.4 0.2 4.2 0.2 5.2C0.2 6.3 1 7 2 7C3 7 3.8 6.3 3.8 5.2C3.8 4.2 3.2 3.4 2 3.4Z',
+  '%': 'M0.3 1.3a0.9 0.9 0 1 0 1.8 0a0.9 0.9 0 1 0 -1.8 0M1.9 5.7a0.9 0.9 0 1 0 1.8 0a0.9 0.9 0 1 0 -1.8 0M3.8 0.3L0.2 6.9'
+}
 const NOTCH = {
-  d: 'M308 346Q316 346 316 354V374Q316 386 328 386H428Q440 386 440 374V354Q440 346 448 346Z',
+  // flares into the face's top edge so there is no sharp tip where it meets the rim
+  d: 'M298 346V348C308 348 316 350.5 316 361V378Q316 390 328 390H428Q440 390 440 378V361C440 350.5 448 348 458 348V346Z',
   lean: LEAN,
   top: TOP,
+  r: 7.5, // ring radius
+  w: 3, // ring stroke
+  k: 1.75, // glyph scale
+  gw: 0.62, // glyph stroke, in glyph units
+  adv: 4.8, // glyph advance, in glyph units
+  glyphs: GLYPHS,
   items: [
-    { cx: 332, cy: 367, pct: 63 },
-    { cx: 369, cy: 367, pct: 48 },
-    { cx: 406, cy: 367, pct: 100 }
-  ],
-  r: 6.6,
-  w: 2.8,
-  bar: { dx: 13, w: 15, h: 4.2 }
+    { cx: 338, cy: 369, pct: 63, text: '63%' },
+    { cx: 390, cy: 369, pct: 48, text: '48%' }
+  ]
 }
 const shear = `matrix(1 0 ${LEAN} 1 ${-LEAN * TOP} 0)`
 
@@ -46,16 +57,20 @@ function arcPath(cx, cy, r, pct) {
   return `M${cx} ${cy - r}A${r} ${r} 0 ${pct > 50 ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)}`
 }
 
-/** The rings and bars in colour `c`, over a faint track. */
+/** The rings and numbers in colour `c`, over a faint track. */
 function notchItems(c, track) {
-  const { items, r, w, bar } = NOTCH
+  const { items, r, w, k, gw, adv, glyphs } = NOTCH
   return items
-    .map(({ cx, cy, pct }) => {
+    .map(({ cx, cy, pct, text }) => {
       const arc = arcPath(cx, cy, r, pct)
       const ring = arc
         ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${track}" stroke-width="${w}"/><path d="${arc}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`
         : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="${w}"/>`
-      return `${ring}<rect x="${cx + bar.dx}" y="${cy - bar.h / 2}" width="${bar.w}" height="${bar.h}" rx="${bar.h / 2}" fill="${c}"/>`
+      const x0 = cx + r + w / 2 + 4
+      const chars = [...text]
+        .map((ch, i) => `<path d="${glyphs[ch]}" transform="translate(${(x0 + i * adv * k).toFixed(2)} ${cy - 3.5 * k}) scale(${k})" fill="none" stroke="${c}" stroke-width="${gw}" stroke-linecap="round" stroke-linejoin="round"/>`)
+        .join('')
+      return ring + chars
     })
     .join('')
 }
