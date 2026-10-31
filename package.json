@@ -29,7 +29,8 @@
     "files": [
       "out/**/*",
       "resources/**/*",
-      "package.json"
+      "package.json",
+      "!resources/installer/**"
     ],
     "win": {
       "target": [
@@ -49,8 +50,19 @@
       "shortcutName": "HOVR",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "artifactName": "HOVR-Setup-${version}.${ext}"
-    }
+      "artifactName": "HOVR-Setup-${version}.${ext}",
+      "installerSidebar": "resources/installer/sidebar.bmp",
+      "uninstallerSidebar": "resources/installer/sidebar.bmp",
+      "installerHeader": "resources/installer/header.bmp",
+      "installerIcon": "resources/icon.ico",
+      "uninstallerIcon": "resources/icon.ico",
+      "installerHeaderIcon": "resources/icon.ico",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "asarUnpack": [
+      "resources/icon.png"
+    ]
   },
   "devDependencies": {
     "@types/node": "^20.11.30",

@@ -9,6 +9,7 @@
  *   4. Quit from the tray menu tears everything down cleanly.
  */
 import { app, BrowserWindow, globalShortcut, session, shell } from 'electron'
+import { execFile } from 'node:child_process'
 import { join } from 'node:path'
 import { runtime } from './config'
 import { createWindow, getMainWindow, setVisible, startCursorPoll, stopCursorPoll, stopHeartbeat } from './window'
@@ -55,6 +56,20 @@ app.on('before-quit', () => {
  * AppUserModelID. In development there is none, so toasts showed the raw id. This writes one
  * named "HOVR" (with the icon); the installed app gets its own from the installer.
  */
+/**
+ * The toast header's name and icon come from this registry key, keyed by the AppUserModelID.
+ * Written every launch so a dev run and an installed copy both show "HOVR" with the logo.
+ */
+function registerToastIdentity(): void {
+  if (process.platform !== 'win32') return
+  const key = String.raw`HKCU\Software\Classes\AppUserModelId\com.hovr.app`
+  const icon = app.isPackaged ? join(process.resourcesPath, 'app.asar.unpacked', 'resources', 'icon.png') : join(app.getAppPath(), 'resources', 'icon.png')
+  const set = (name: string, value: string) => execFile('reg', ['add', key, '/v', name, '/t', 'REG_SZ', '/d', value, '/f'], () => {})
+  set('DisplayName', 'HOVR')
+  set('IconUri', icon)
+  set('IconBackgroundColor', '0')
+}
+
 function registerStartMenuShortcut(): void {
   if (process.platform !== 'win32' || app.isPackaged) return
   try {
@@ -75,6 +90,7 @@ app.whenReady().then(() => {
   // Branded native notifications on Windows.
   app.setAppUserModelId('com.hovr.app')
   registerStartMenuShortcut()
+  registerToastIdentity()
 
   // Lock the renderer session down: deny every permission request.
   session.defaultSession.setPermissionRequestHandler((_wc, _perm, cb) => cb(false))

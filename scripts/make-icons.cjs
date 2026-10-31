@@ -160,6 +160,45 @@ for (const [name, w, h] of [
   writeFileSync(out(`resources/appx/${name}`), png(wide, w))
 }
 
+/** Installer artwork: NSIS only takes 24-bit BMPs. */
+function bmp(svg, w, h) {
+  const px = new Resvg(svg, { fitTo: { mode: 'width', value: w } }).render().pixels
+  const rowSize = Math.ceil((w * 3) / 4) * 4
+  const buf = Buffer.alloc(54 + rowSize * h)
+  buf.write('BM', 0)
+  buf.writeUInt32LE(buf.length, 2)
+  buf.writeUInt32LE(54, 10)
+  buf.writeUInt32LE(40, 14)
+  buf.writeInt32LE(w, 18)
+  buf.writeInt32LE(h, 22)
+  buf.writeUInt16LE(1, 26)
+  buf.writeUInt16LE(24, 28)
+  buf.writeUInt32LE(rowSize * h, 34)
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = ((h - 1 - y) * w + x) * 4
+      const o = 54 + y * rowSize + x * 3
+      buf[o] = px[i + 2]
+      buf[o + 1] = px[i + 1]
+      buf[o + 2] = px[i]
+    }
+  }
+  return buf
+}
+const tileUri = `data:image/png;base64,${png(tile, 512).toString('base64')}`
+const sidebar = `<svg xmlns="http://www.w3.org/2000/svg" width="164" height="314" viewBox="0 0 164 314">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#17171b"/><stop offset="1" stop-color="#0b0b0d"/></linearGradient></defs>
+  <rect width="164" height="314" fill="url(#g)"/>
+  <image href="${tileUri}" x="32" y="46" width="100" height="100"/>
+</svg>`
+const header = `<svg xmlns="http://www.w3.org/2000/svg" width="150" height="57" viewBox="0 0 150 57">
+  <rect width="150" height="57" fill="#ffffff"/>
+  <image href="${tileUri}" x="92" y="5" width="47" height="47"/>
+</svg>`
+mkdirSync(out('resources/installer'), { recursive: true })
+writeFileSync(out('resources/installer/sidebar.bmp'), bmp(sidebar, 164, 314))
+writeFileSync(out('resources/installer/header.bmp'), bmp(header, 150, 57))
+
 writeFileSync(out('src/assets/logo.svg'), `${mono('#FFFFFF').replace(/\n\s*/g, '')}\n`)
 
 // Shapes the React Logo component draws, so the app and the icon never drift apart.
