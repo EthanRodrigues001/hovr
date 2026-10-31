@@ -10,7 +10,7 @@ import { worstRemainingPercent } from '../../../shared/usageMath'
 import { PROVIDER_SOURCE } from '../../lib/providers'
 import { useStore } from '../../store/appStore'
 import { ProviderRing } from '../ProviderRing'
-import { TickBar } from '../analytics/TickBar'
+import { SegmentBar } from '../analytics/SegmentBar'
 import { Switch } from '../ui'
 
 type Tone = 'ok' | 'warn' | 'muted'
@@ -134,14 +134,14 @@ export function ProvidersTab() {
         </button>
       </div>
       <div className="pcount">
-        <TickBar
-          ticks={64}
+        <SegmentBar
+          hideEmpty
           segments={[
             { label: 'Connected', value: connected.length, color: '#4ade80' },
             { label: 'Need attention', value: attention.length, color: '#fbbf24' },
             { label: 'Detected, no limits', value: detected.length, color: '#9ca3af' },
             { label: 'Not installed', value: missing.length, color: '#3f3f46' }
-          ].filter((x) => x.value > 0)}
+          ]}
         />
       </div>
       {group('Connected', connected)}

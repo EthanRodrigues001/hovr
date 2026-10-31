@@ -11,7 +11,7 @@ import { paceOf } from '../../../shared/usageMath'
 import { forecastOf } from '../../../shared/forecast'
 import { span, weekdayTime } from '../../lib/format'
 import { PROVIDER_META, remainingTone } from '../../lib/providers'
-import { TickBar, type TickSegment } from './TickBar'
+import { SegmentBar, type BarSegment } from './SegmentBar'
 import { useStore } from '../../store/appStore'
 import { ProviderRing } from '../ProviderRing'
 import { Segmented } from '../ui'
@@ -42,15 +42,15 @@ interface Group {
 const shortDate = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
 /** Counts how many limits reset within an hour, a day, a week, or later. */
-function resetBuckets(lanes: Array<{ resetsAt: number }>, now: number): TickSegment[] {
+function resetBuckets(lanes: Array<{ resetsAt: number }>, now: number): BarSegment[] {
   const left = (l: { resetsAt: number }) => l.resetsAt - now
   const n = (lo: number, hi: number) => lanes.filter((l) => left(l) >= lo && left(l) < hi).length
   const H = 3_600_000
   return [
-    { label: 'Within an hour', value: n(-Infinity, H), color: '#4ade80' },
-    { label: 'Within a day', value: n(H, 24 * H), color: '#fbbf24' },
-    { label: 'This week', value: n(24 * H, 7 * 24 * H), color: '#9ca3af' },
-    { label: 'Later', value: n(7 * 24 * H, Infinity), color: '#4b5563' }
+    { label: 'Within an hour', value: n(-Infinity, H), color: '#7dd3fc' },
+    { label: 'Within a day', value: n(H, 24 * H), color: '#38bdf8' },
+    { label: 'This week', value: n(24 * H, 7 * 24 * H), color: '#6366f1' },
+    { label: 'Later', value: n(7 * 24 * H, Infinity), color: '#475569' }
   ]
 }
 
@@ -148,7 +148,7 @@ export function TimelineTab() {
       </div>
       <section className="tl-resets">
         <h3>Resets by when</h3>
-        <TickBar ticks={90} segments={resetBuckets(flat, now)} />
+        <SegmentBar segments={resetBuckets(flat, now)} />
       </section>
       <div className="tl-tools">
         <span className="muted">Each limit as a window on the calendar: the one that ended, the current one, and the next.</span>

@@ -1669,3 +1669,43 @@
   padding: 16px 22px 12px;
   border-top: 1px solid var(--hairline);
 }
+
+/* ===== segmented bar: solid rounded segments + "label count" legend ===== */
+.segbar-track {
+  display: flex;
+  gap: 3px;
+  height: 14px;
+}
+.segbar-track i {
+  min-width: 10px;
+  border-radius: 6px;
+  transition: filter 0.15s;
+}
+.segbar-track i:hover {
+  filter: brightness(1.15);
+}
+.segbar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.segbar-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.segbar-legend i {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+}
+.segbar-legend b {
+  font-weight: 600;
+  color: var(--text);
+}
+.fc-main > .segbar {
+  margin-top: 14px;
+}

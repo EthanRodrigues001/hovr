@@ -14,7 +14,7 @@ import { useStore } from '../../store/appStore'
 import { ProviderRing } from '../ProviderRing'
 import { useHeatTip } from './HeatTip'
 import { LimitRings } from './LimitRings'
-import { TickBar } from './TickBar'
+import { SegmentBar } from './SegmentBar'
 
 const DAY = 86_400_000
 const AXIS_DAYS = 7
@@ -259,12 +259,11 @@ export function ForecastTab() {
       <section className="fc-main">
         <h2 className="an-h2">{headline}</h2>
         <p className="muted">{sub}</p>
-        <TickBar
-          ticks={110}
+        <SegmentBar
           segments={[
             { label: 'Last until reset', value: items.filter((i) => i.forecast.runOutAt === null && i.forecast.projectedAtReset !== null).length, color: '#4ade80' },
             { label: 'Run out', value: outs.length, color: '#f87171' },
-            { label: 'Too early', value: items.filter((i) => i.forecast.projectedAtReset === null).length, color: '#6b7280' }
+            { label: 'Too early', value: items.filter((i) => i.forecast.projectedAtReset === null).length, color: '#475569' }
           ]}
         />
         <div className="fc-axis">

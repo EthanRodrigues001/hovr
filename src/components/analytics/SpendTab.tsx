@@ -12,10 +12,10 @@ import { PROVIDER_META } from '../../lib/providers'
 import { useStore } from '../../store/appStore'
 import { Segmented } from '../ui'
 import { ReportGate } from './ReportGate'
-import { TickBar } from './TickBar'
+import { SegmentBar } from './SegmentBar'
 
 const PROVIDERS: readonly HistoryProvider[] = ['claude', 'codex', 'antigravity', 'cursor']
-const KIND_COLORS = { input: '#52525b', cacheRead: '#71717a', cacheWrite: '#a1a1aa', output: '#e4e4e7' } as const
+const KIND_COLORS = { input: '#a3e635', cacheRead: '#22d3ee', cacheWrite: '#f472b6', output: '#facc15' } as const
 
 type DayDatum = { date: string } & Record<string, number | string>
 
@@ -187,8 +187,7 @@ function Body({ report, days }: { report: HistoryReport; days: number }) {
       {priced && report.costByType && typeTotal > 0 && (
         <section className="sec">
           <header className="sec-head"><h3>Cost by type</h3></header>
-          <TickBar
-            ticks={150}
+          <SegmentBar
             segments={([['input', 'Input'], ['cacheRead', 'Cache read'], ['cacheWrite', 'Cache write'], ['output', 'Output']] as const).map(([k, label]) => ({
               label,
               value: report.costByType![k],
