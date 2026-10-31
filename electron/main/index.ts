@@ -71,9 +71,30 @@ function registerToastIdentity(): void {
 }
 
 function registerStartMenuShortcut(): void {
-  if (process.platform !== 'win32' || app.isPackaged) return
+  if (process.platform !== 'win32') return
+  const programs = join(app.getPath('appData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs')
   try {
-    const link = join(app.getPath('appData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'HOVR.lnk')
+    if (app.isPackaged) {
+      // The installer and the updater start HOVR through this shortcut, so it must always point at the
+      // installed exe. Repair it if anything (an older dev run, a moved install) left it pointing elsewhere.
+      const link = join(programs, 'HOVR.lnk')
+      let current: Electron.ShortcutDetails | null = null
+      try {
+        current = shell.readShortcutLink(link)
+      } catch {
+        /* missing */
+      }
+      if (!current || current.target.toLowerCase() !== process.execPath.toLowerCase() || current.args) {
+        shell.writeShortcutLink(link, 'create', {
+          target: process.execPath,
+          appUserModelId: 'com.hovr.app',
+          description: 'HOVR'
+        })
+      }
+      return
+    }
+    // Dev runs get their own shortcut so they can never overwrite the installed app's.
+    const link = join(programs, 'HOVR (dev).lnk')
     shell.writeShortcutLink(link, 'create', {
       target: process.execPath,
       args: app.getAppPath(),

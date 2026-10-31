@@ -61,7 +61,8 @@ export function quitAndInstallUpdate(): void {
     return
   }
   console.log('[AutoUpdater] quitAndInstall triggered by renderer button.')
-  _autoUpdater.quitAndInstall(false, true)
+  // Silent: no installer window; the app is started again as soon as it finishes.
+  _autoUpdater.quitAndInstall(true, true)
 }
 
 /**
