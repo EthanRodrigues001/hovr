@@ -66,14 +66,12 @@ async function install(title) {
     return failed('Setup could not finish.', r.error)
   }
   p.done()
-  await wait(500)
-  render(`${logo}<h1>HOVR is ready</h1><p>It sits in your system tray and drops down at the top of the screen when you hover there.</p>
-    <div class="actions"><button class="btn" id="x">Close</button><button class="btn primary" id="open">Open HOVR</button></div>`)
+  await wait(400)
+  await api.launch()
+  render(`${logo}<h1>HOVR is ready</h1><p>It is running now. Look for it at the top of your screen and in the system tray.</p>
+    <div class="actions"><button class="btn primary" id="x">Done</button></div>`)
   on('x', () => api.close())
-  on('open', async () => {
-    await api.launch()
-    api.close()
-  })
+  setTimeout(() => api.close(), 6000)
 }
 
 async function uninstall() {
