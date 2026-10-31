@@ -44,16 +44,12 @@
       "icon": "resources/icon.ico"
     },
     "nsis": {
-      "oneClick": false,
+      "oneClick": true,
       "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
       "shortcutName": "HOVR",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "artifactName": "HOVR-Setup-${version}.${ext}",
-      "installerSidebar": "resources/installer/sidebar.bmp",
-      "uninstallerSidebar": "resources/installer/sidebar.bmp",
-      "installerHeader": "resources/installer/header.bmp",
       "installerIcon": "resources/icon.ico",
       "uninstallerIcon": "resources/icon.ico",
       "installerHeaderIcon": "resources/icon.ico",
