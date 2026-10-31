@@ -2,7 +2,7 @@
  * A scroll container with no scrollbar. Content fades out at an edge that has more to scroll,
  * and a small chevron at the bottom says so (click it to page down).
  */
-import { ChevronDown } from 'lucide-react'
+import { ArrowDown } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
 interface Props {
@@ -16,6 +16,8 @@ interface Props {
 export function ScrollArea({ className = '', wrapClass = '', children }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   const [edges, setEdges] = useState({ top: false, bottom: false })
+  const [rail, setRail] = useState({ top: 0, height: 0, active: false })
+  const idle = useRef<number>()
 
   const measure = useCallback(() => {
     const el = ref.current
@@ -23,6 +25,8 @@ export function ScrollArea({ className = '', wrapClass = '', children }: Props) 
     const top = el.scrollTop > 4
     const bottom = el.scrollHeight - el.clientHeight - el.scrollTop > 4
     setEdges((e) => (e.top === top && e.bottom === bottom ? e : { top, bottom }))
+    const ratio = el.clientHeight / el.scrollHeight
+    setRail((r) => ({ top: (el.scrollTop / el.scrollHeight) * 100, height: ratio * 100, active: r.active }))
   }, [])
 
   useEffect(() => {
@@ -49,18 +53,28 @@ export function ScrollArea({ className = '', wrapClass = '', children }: Props) 
       <div
         ref={ref}
         className={`sa-scroller ${className}`}
-        onScroll={measure}
-        style={{ '--fade-top': edges.top ? '28px' : '0px', '--fade-bottom': edges.bottom ? '52px' : '0px' } as React.CSSProperties}
+        onScroll={() => {
+          measure()
+          setRail((r) => ({ ...r, active: true }))
+          window.clearTimeout(idle.current)
+          idle.current = window.setTimeout(() => setRail((r) => ({ ...r, active: false })), 900)
+        }}
+        style={{ '--fade-top': edges.top ? '34px' : '0px', '--fade-bottom': edges.bottom ? '64px' : '0px' } as React.CSSProperties}
       >
         {children}
       </div>
+      {rail.height < 99.5 && (
+        <div className={`sa-rail ${rail.active ? 'on' : ''}`} aria-hidden>
+          <div className="sa-thumb" style={{ top: `${rail.top}%`, height: `${rail.height}%` }} />
+        </div>
+      )}
       {edges.bottom && (
         <button
           className="sa-more"
           aria-label="Scroll down"
           onClick={() => ref.current?.scrollBy({ top: ref.current.clientHeight * 0.8, behavior: 'smooth' })}
         >
-          <ChevronDown size={14} />
+          <ArrowDown size={13} strokeWidth={2} />
         </button>
       )}
     </div>
