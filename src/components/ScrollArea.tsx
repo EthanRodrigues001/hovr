@@ -1,8 +1,8 @@
 /**
  * A scroll container with no scrollbar. Content fades out at an edge that has more to scroll,
- * and a small chevron at the bottom says so (click it to page down).
+ * and a "Scroll to end" pill at the bottom says so (click it to jump there).
  */
-import { ArrowDown } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
 interface Props {
@@ -71,10 +71,11 @@ export function ScrollArea({ className = '', wrapClass = '', children }: Props) 
       {edges.bottom && (
         <button
           className="sa-more"
-          aria-label="Scroll down"
-          onClick={() => ref.current?.scrollBy({ top: ref.current.clientHeight * 0.8, behavior: 'smooth' })}
+          aria-label="Scroll to end"
+          onClick={() => ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: 'smooth' })}
         >
-          <ArrowDown size={13} strokeWidth={2} />
+          <ChevronDown size={14} strokeWidth={2} />
+          Scroll to end
         </button>
       )}
     </div>
