@@ -15,7 +15,7 @@ import { ReportGate } from './ReportGate'
 import { SegmentBar } from './SegmentBar'
 
 const PROVIDERS: readonly HistoryProvider[] = ['claude', 'codex', 'antigravity', 'cursor']
-const KIND_COLORS = { input: '#a3e635', cacheRead: '#22d3ee', cacheWrite: '#f472b6', output: '#facc15' } as const
+const KIND_COLORS = { input: '#8aa05a', cacheRead: '#4a9db0', cacheWrite: '#b4608a', output: '#c9a23f' } as const
 
 type DayDatum = { date: string } & Record<string, number | string>
 

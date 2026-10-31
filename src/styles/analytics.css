@@ -1709,3 +1709,21 @@
 .fc-main > .segbar {
   margin-top: 14px;
 }
+
+/* thinner, squarer, calmer */
+.segbar-track {
+  height: 8px;
+  gap: 2px;
+}
+.segbar-track i {
+  min-width: 6px;
+  border-radius: 2px;
+}
+.segbar-legend {
+  font-size: 12.5px;
+}
+.segbar-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}

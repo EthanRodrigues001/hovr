@@ -261,8 +261,8 @@ export function ForecastTab() {
         <p className="muted">{sub}</p>
         <SegmentBar
           segments={[
-            { label: 'Last until reset', value: items.filter((i) => i.forecast.runOutAt === null && i.forecast.projectedAtReset !== null).length, color: '#4ade80' },
-            { label: 'Run out', value: outs.length, color: '#f87171' },
+            { label: 'Last until reset', value: items.filter((i) => i.forecast.runOutAt === null && i.forecast.projectedAtReset !== null).length, color: '#3f9d6b' },
+            { label: 'Run out', value: outs.length, color: '#c4585c' },
             { label: 'Too early', value: items.filter((i) => i.forecast.projectedAtReset === null).length, color: '#475569' }
           ]}
         />

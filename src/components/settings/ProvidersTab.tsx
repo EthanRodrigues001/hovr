@@ -137,9 +137,9 @@ export function ProvidersTab() {
         <SegmentBar
           hideEmpty
           segments={[
-            { label: 'Connected', value: connected.length, color: '#4ade80' },
-            { label: 'Need attention', value: attention.length, color: '#fbbf24' },
-            { label: 'Detected, no limits', value: detected.length, color: '#9ca3af' },
+            { label: 'Connected', value: connected.length, color: '#3f9d6b' },
+            { label: 'Need attention', value: attention.length, color: '#b8892f' },
+            { label: 'Detected, no limits', value: detected.length, color: '#7c8594' },
             { label: 'Not installed', value: missing.length, color: '#3f3f46' }
           ]}
         />

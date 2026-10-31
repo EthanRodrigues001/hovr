@@ -47,10 +47,10 @@ function resetBuckets(lanes: Array<{ resetsAt: number }>, now: number): BarSegme
   const n = (lo: number, hi: number) => lanes.filter((l) => left(l) >= lo && left(l) < hi).length
   const H = 3_600_000
   return [
-    { label: 'Within an hour', value: n(-Infinity, H), color: '#7dd3fc' },
-    { label: 'Within a day', value: n(H, 24 * H), color: '#38bdf8' },
-    { label: 'This week', value: n(24 * H, 7 * 24 * H), color: '#6366f1' },
-    { label: 'Later', value: n(7 * 24 * H, Infinity), color: '#475569' }
+    { label: 'Within an hour', value: n(-Infinity, H), color: '#6aa6c4' },
+    { label: 'Within a day', value: n(H, 24 * H), color: '#4a7fb0' },
+    { label: 'This week', value: n(24 * H, 7 * 24 * H), color: '#5560a8' },
+    { label: 'Later', value: n(7 * 24 * H, Infinity), color: '#3b4656' }
   ]
 }
 
