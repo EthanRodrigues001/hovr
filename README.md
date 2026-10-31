@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src=".github/assets/banner.png?v=2" alt="HOVR" width="560" />
+<img src=".github/assets/banner.png?v=3" alt="HOVR" width="100%" />
 
 <br />
 
