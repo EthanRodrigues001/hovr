@@ -333,8 +333,27 @@ export function ForecastTab() {
       {current && (
         <div className="fc-side">
           <LimitRings
-            items={items.map((i) => ({ key: i.key, summary: rowText(i.forecast, now).top,
-              name: `${i.providerLabel} ${i.window.label}`.replace('Claude & GPT (shared) · ', '').slice(0, 20), accent: PROVIDER_META[i.provider].accent, forecast: i.forecast }))}
+            items={items.map((i) => {
+              const label = i.window.label.replace('Claude & GPT (shared) · ', '')
+              // "Cursor" + "Cursor Models" should read "Cursor Models", not "Cursor Cursor Models".
+              const name = label.toLowerCase().startsWith(i.providerLabel.toLowerCase()) ? label : `${i.providerLabel} ${label}`
+              const f = i.forecast
+              const used = f.usedNow < 10 && f.usedNow > 0 ? f.usedNow.toFixed(1) : String(Math.round(f.usedNow))
+              return {
+                key: i.key,
+                summary: rowText(f, now).top,
+                name: name.length > 26 ? `${name.slice(0, 25)}…` : name,
+                fullName: name,
+                accent: PROVIDER_META[i.provider].accent,
+                forecast: f,
+                rows: [
+                  ['Used', `${used}%`],
+                  ['Left', `${Math.round(100 - f.usedNow)}%`],
+                  ['Resets in', span(Math.max(0, f.resetsAt - now))],
+                  ...(f.paceRatio === null ? [] : [['Pace', `${f.paceRatio.toFixed(1)}x`] as [string, string]])
+                ] as Array<[string, string]>
+              }
+            })}
             selected={current.key}
             onSelect={setSelected}
             center={{ top: outs.length === 0 ? 'All clear' : `${outs.length} run out`, bottom: 'before reset' }}

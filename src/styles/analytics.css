@@ -1598,3 +1598,54 @@
   flex: 1;
   min-height: 200px;
 }
+
+/* ===== rings: bigger labels, richer tooltip ===== */
+.fc {
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+.rings {
+  max-width: 300px;
+}
+.ring-name {
+  font-size: 12px;
+}
+.ring-center-top {
+  font-size: 17px;
+}
+.ring-center-bottom {
+  font-size: 12px;
+}
+.heat-tip .ht-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 650;
+  color: #fff;
+}
+.heat-tip .ht-title i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.heat-tip .ht-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  font-size: 11.5px;
+}
+.heat-tip .ht-row b {
+  font-weight: 550;
+  color: var(--text);
+}
+.heat-tip .ht-verdict {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid var(--hairline);
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+.heat-tip .ht-verdict.bad {
+  color: #f87171;
+}
