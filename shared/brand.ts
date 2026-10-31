@@ -16,7 +16,7 @@ export const BRAND = {
    * (feedback button, star prompt, changelog fetch) checks this and hides itself
    * rather than linking somewhere wrong. Set it once the repo is real.
    */
-  repoUrl: null as string | null
+  repoUrl: 'https://github.com/EthanRodrigues001/hovr' as string | null
 } as const
 
 /** `owner/repo` for GitHub API calls, or null when {@link BRAND.repoUrl} is unset. */

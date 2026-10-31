@@ -18,7 +18,7 @@ rmSync(out, { recursive: true, force: true })
 sh('npx electron-vite build')
 sh(`npx electron-builder --win nsis -c.extraMetadata.buildTarget=github -c.directories.output="${join(out, 'app')}"`)
 
-const nsis = readdirSync(join(out, 'app')).find((f) => /^HOVR-Setup-.*\.exe$/.test(f))
+const nsis = readdirSync(join(out, 'app')).find((f) => /^HOVR-Update-.*.exe$/.test(f))
 mkdirSync(join(root, 'installer', 'payload'), { recursive: true })
 copyFileSync(join(out, 'app', nsis), join(root, 'installer', 'payload', 'payload.exe'))
 copyFileSync(join(root, 'src', 'assets', 'logo.svg'), join(root, 'installer', 'logo.svg'))
