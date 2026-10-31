@@ -82,7 +82,7 @@ export function createTray(): Tray {
             pushState.openSettings()
           }
         },
-        { label: 'Refresh now', click: () => void refreshUsage() },
+        { label: 'Refresh now', click: () => void refreshUsage(true) },
         { type: 'separator' },
         {
           label: 'Ignore hover in fullscreen apps',

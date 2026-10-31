@@ -24,6 +24,26 @@ let running: Promise<void> | null = null
 let rerun = false
 let timer: NodeJS.Timeout | null = null
 
+/**
+ * Be gentle with the providers' (undocumented) usage endpoints. Anything that triggers a refresh —
+ * toggling a tool, the tray, the refresh button, the timer, a dev restart — would otherwise hit
+ * every endpoint, and Claude's starts answering 429. So each tool is read at most once per
+ * `minGap`, and a 429 backs off exponentially (10 min, 20, 40 … up to an hour) instead of retrying.
+ */
+const MIN_GAP_MS: Partial<Record<ProviderId, number>> = { claude: 5 * 60_000 }
+const DEFAULT_GAP_MS = 60_000
+const MANUAL_GAP_MS = 30_000
+const BACKOFF_START_MS = 10 * 60_000
+const BACKOFF_MAX_MS = 60 * 60_000
+const lastRead = new Map<ProviderId, number>()
+const cooldownUntil = new Map<ProviderId, number>()
+const rateLimitHits = new Map<ProviderId, number>()
+let forceNext = false
+
+function minutes(ms: number): number {
+  return Math.max(1, Math.ceil(ms / 60_000))
+}
+
 export function getUsageState(): UsageState {
   return { usage: { ...usage }, providers: [...providers] }
 }
@@ -41,17 +61,37 @@ async function refreshDriver(driver: (typeof DRIVERS)[number], disabled: Readonl
     delete usage[driver.id]
     probeErrors.delete(driver.id)
   } else if (driver.supportsLimits) {
-    try {
-      const probed = await driver.read()
-      const next = resolveAfterProbe({ published: usage[driver.id], probed })
-      if (next) usage[driver.id] = next
-      if (probed.unavailable?.reason === 'probeFailed') {
-        probeErrors.set(driver.id, probed.unavailable.message ?? 'Could not read limits.')
-      } else {
-        probeErrors.delete(driver.id)
+    const now = Date.now()
+    const gap = forceNext ? MANUAL_GAP_MS : (MIN_GAP_MS[driver.id] ?? DEFAULT_GAP_MS)
+    const coolUntil = cooldownUntil.get(driver.id) ?? 0
+    if (coolUntil > now) {
+      // Rate limited earlier: leave the endpoint alone and keep showing the last reading.
+      probeErrors.set(driver.id, `Rate limited. Next try in ${minutes(coolUntil - now)} min.`)
+    } else if (usage[driver.id] && now - (lastRead.get(driver.id) ?? 0) < gap - 10_000) {
+      // Read recently enough; reuse it.
+    } else {
+      lastRead.set(driver.id, now)
+      try {
+        const probed = await driver.read()
+        const next = resolveAfterProbe({ published: usage[driver.id], probed })
+        if (next) usage[driver.id] = next
+        const message = probed.unavailable?.message ?? ''
+        if (probed.unavailable?.reason === 'probeFailed' && message.startsWith('Rate limited')) {
+          const hits = (rateLimitHits.get(driver.id) ?? 0) + 1
+          rateLimitHits.set(driver.id, hits)
+          const wait = Math.min(BACKOFF_MAX_MS, BACKOFF_START_MS * 2 ** (hits - 1))
+          cooldownUntil.set(driver.id, Date.now() + wait)
+          probeErrors.set(driver.id, `Rate limited. Next try in ${minutes(wait)} min.`)
+        } else if (probed.unavailable?.reason === 'probeFailed') {
+          probeErrors.set(driver.id, message || 'Could not read limits.')
+        } else {
+          rateLimitHits.delete(driver.id)
+          cooldownUntil.delete(driver.id)
+          probeErrors.delete(driver.id)
+        }
+      } catch {
+        /* readers never throw; a defect here must not take the loop down */
       }
-    } catch {
-      /* readers never throw; a defect here must not take the loop down */
     }
   }
 
@@ -89,11 +129,12 @@ async function runRefresh(): Promise<void> {
 }
 
 /** Refresh everything now. Calls made during a run schedule exactly one follow-up run. */
-export function refreshUsage(): Promise<void> {
+export function refreshUsage(manual = false): Promise<void> {
   if (running) {
     rerun = true
     return running
   }
+  forceNext = manual
   running = runRefresh()
     .catch(() => {
       /* keep the loop alive */

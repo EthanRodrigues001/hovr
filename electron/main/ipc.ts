@@ -110,7 +110,7 @@ export function registerIpc(): void {
 
   handle('usage:get', () => getUsageState())
   handle('usage:refresh', async () => {
-    await refreshUsage()
+    await refreshUsage(true)
     return getUsageState()
   })
 
