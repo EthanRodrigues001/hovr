@@ -1649,3 +1649,23 @@
 .heat-tip .ht-verdict.bad {
   color: #f87171;
 }
+
+/* pointer-following tooltip (rings) */
+.heat-tip.follow {
+  transform: translate(16px, 16px);
+}
+.heat-tip.follow.flip {
+  transform: translate(calc(-100% - 16px), 16px);
+}
+.tl-resets {
+  padding: 14px 0 4px;
+}
+.tl-resets h3 {
+  font-size: 13px;
+  font-weight: 650;
+  margin-bottom: 10px;
+}
+.tl-resets {
+  padding: 16px 22px 12px;
+  border-top: 1px solid var(--hairline);
+}

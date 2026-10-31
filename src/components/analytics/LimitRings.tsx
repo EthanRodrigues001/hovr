@@ -4,7 +4,6 @@
  * by reset at the current pace, white tick = now, red tick = where it runs out.
  * Names sit left of the 12 o'clock start line; click one to select it.
  */
-import { useState } from 'react'
 import { useHeatTip } from './HeatTip'
 import type { Forecast } from '../../../shared/forecast'
 
@@ -58,9 +57,7 @@ export function LimitRings({
   center: { top: string; bottom: string }
 }) {
   const shown = items.slice(0, MAX_RINGS)
-  const [hover, setHover] = useState<string | null>(null)
   const tip = useHeatTip()
-  const hovered = shown.find((i) => i.key === hover)
   return (
     <div className="hm-wrap rings-wrap" ref={tip.ref}>
     <svg className="rings" viewBox={`0 0 ${SIZE} ${SIZE}`} role="img" aria-label="Limit rings">
@@ -78,9 +75,8 @@ export function LimitRings({
         const [nx1, ny1] = polar(r - STROKE / 2 - 2, f.elapsed * SWEEP)
         const [nx2, ny2] = polar(r + STROKE / 2 + 2, f.elapsed * SWEEP)
         return (
-          <g key={item.key} className={`ring-g ${on ? 'on' : ''}`} onClick={() => onSelect(item.key)} onMouseEnter={(e) => {
-              setHover(item.key)
-              tip.show(
+          <g key={item.key} className={`ring-g ${on ? 'on' : ''}`} onClick={() => onSelect(item.key)} onMouseMove={(e) => {
+              tip.follow(
                 e,
                 <>
                   <div className="ht-title">
@@ -98,7 +94,6 @@ export function LimitRings({
               )
             }}
             onMouseLeave={() => {
-              setHover(null)
               tip.hide()
             }}
           >
@@ -122,10 +117,10 @@ export function LimitRings({
       })}
       <line x1={C} y1={C - R0 - 10} x2={C} y2={C - R0 + (shown.length - 1) * STEP + 8} stroke="rgba(255,255,255,0.5)" strokeWidth={1.4} />
       <text x={C} y={C + 8} textAnchor="middle" className="ring-center-top">
-        {hovered ? `${Math.round(hovered.forecast.usedNow)}% used` : center.top}
+        {center.top}
       </text>
       <text x={C} y={C + 26} textAnchor="middle" className="ring-center-bottom">
-        {hovered ? hovered.summary : center.bottom}
+        {center.bottom}
       </text>
     </svg>
     {tip.node}
