@@ -20,7 +20,7 @@ export interface LogoProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
 export const Logo = memo(
   forwardRef<SVGSVGElement, LogoProps>(function Logo({ size = 24, title, ...props }, ref) {
     const mask = `logo-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
-    const { BODY, BODY_STROKE, FACE, FACE_STROKE, VIEW, CANVAS } = MARK
+    const { BODY_PATH, FACE_PATH, VIEW, CANVAS } = MARK
     return (
       <svg
         ref={ref}
@@ -37,8 +37,8 @@ export const Logo = memo(
         {title ? <title>{title}</title> : null}
         <defs>
           <mask id={mask} maskUnits="userSpaceOnUse" x="0" y="0" width={CANVAS.w} height={CANVAS.h}>
-            <polygon points={BODY} fill="#fff" stroke="#fff" strokeWidth={BODY_STROKE} strokeLinejoin="round" />
-            <polygon points={FACE} fill="#000" stroke="#000" strokeWidth={FACE_STROKE} strokeLinejoin="round" />
+            <path d={BODY_PATH} fill="#fff" />
+            <path d={FACE_PATH} fill="#000" />
           </mask>
         </defs>
         <rect width={CANVAS.w} height={CANVAS.h} fill="currentColor" mask={`url(#${mask})`} />

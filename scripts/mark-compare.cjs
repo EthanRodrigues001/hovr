@@ -17,16 +17,12 @@ if (!refPath) {
   process.exit(1)
 }
 const ref = readFileSync(refPath).toString('base64')
-const { BODY, BODY_STROKE, FACE, FACE_STROKE } = MARK
+const { BODY_PATH, FACE_PATH } = MARK
 const W = 735
 const H = 919
 
-const shape = (ink, face) => `
-  <polygon points="${BODY}" fill="${ink}" stroke="${ink}" stroke-width="${BODY_STROKE}" stroke-linejoin="round"/>
-  <polygon points="${FACE}" fill="${face}" stroke="${face}" stroke-width="${FACE_STROKE}" stroke-linejoin="round"/>`
-const outline = `
-  <polygon points="${BODY}" fill="none" stroke="#ff2d2d" stroke-width="${BODY_STROKE}" stroke-linejoin="round" stroke-opacity="0.35"/>
-  <polygon points="${FACE}" fill="none" stroke="#2d6bff" stroke-width="${FACE_STROKE}" stroke-linejoin="round" stroke-opacity="0.45"/>`
+const shape = (ink, face) => `<path d="${BODY_PATH}" fill="${ink}"/><path d="${FACE_PATH}" fill="${face}"/>`
+const outline = `<path d="${BODY_PATH}" fill="none" stroke="#ff2d2d" stroke-width="1.5"/><path d="${FACE_PATH}" fill="none" stroke="#2d6bff" stroke-width="1.5"/>`
 const img = `<image href="data:image/png;base64,${ref}" width="${W}" height="${H}"/>`
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W * 3}" height="${H}" viewBox="0 0 ${W * 3} ${H}">
