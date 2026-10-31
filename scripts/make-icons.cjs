@@ -14,14 +14,37 @@ const { join } = require('node:path')
 const root = join(__dirname, '..')
 
 /* ---- the mark, in the reference's own coordinate space ---- */
-const BODY = '292,342 463,342 485,356 493,517 452,574 266,576 252,556 240,396' // stroked round
-const BODY_STROKE = 14
-const FACE = '306,359 457,359 471,510 321,510' // stroked round in the face colour
-const FACE_STROKE = 18
+// The face is a rounded quad. The body is that quad swept back along EXTRUDE (down and to the
+// left), so the chamfers at top-left and bottom-right are the sweep's silhouette, not drawn by hand.
+const FACE_QUAD = [[303, 355], [454, 355], [473, 509], [321, 509]] // face corners, before rounding
+const FACE_ROUND = 8
+const BODY_QUAD = [[288, 347], [462, 347], [493, 519], [311, 519]] // front plate (rim included), before rounding
+const BODY_ROUND = 14
+const EXTRUDE = [-45, 52]
+const FACE_STROKE = FACE_ROUND * 2
+const BODY_STROKE = BODY_ROUND * 2
+const FACE = FACE_QUAD.map((p) => p.join(',')).join(' ')
+const BODY = hull([...BODY_QUAD, ...BODY_QUAD.map(([x, y]) => [x + EXTRUDE[0], y + EXTRUDE[1]])])
+  .map((p) => p.join(','))
+  .join(' ')
+function hull(pts) {
+  const p = [...pts].sort((m, n) => m[0] - n[0] || m[1] - n[1])
+  const cross = (o, m, n) => (m[0] - o[0]) * (n[1] - o[1]) - (m[1] - o[1]) * (n[0] - o[0])
+  const half = (list) => {
+    const h = []
+    for (const q of list) {
+      while (h.length > 1 && cross(h[h.length - 2], h[h.length - 1], q) <= 0) h.pop()
+      h.push(q)
+    }
+    h.pop()
+    return h
+  }
+  return [...half(p), ...half([...p].reverse())]
+}
 const LEAN = 0.095 // how far the sheared parts shift right per unit of height
 const NOTCH = 'M316 345C326 345 330 350 330 360V412C330 421 337 428 346 428H414C423 428 430 421 430 412V360C430 350 434 345 444 345Z'
 const LOADER = { cx: 380, cy: 389, r: 19, w: 5.5 }
-const VIEW = { x: 224, y: 314, size: 286 } // square window around the mark
+const VIEW = { x: 224, y: 316, size: 286 } // square window around the mark
 const CANVAS = { w: 735, h: 919 }
 
 /** Notch + loader shear with the face so they follow its tilt. */
@@ -42,10 +65,6 @@ function markFlat(ink, face) {
   return `<g>
     <polygon points="${BODY}" fill="${ink}" stroke="${ink}" stroke-width="${BODY_STROKE}" stroke-linejoin="round"/>
     <polygon points="${FACE}" fill="${face}" stroke="${face}" stroke-width="${FACE_STROKE}" stroke-linejoin="round"/>
-    <g transform="${shear}">
-      <path d="${NOTCH}" fill="${ink}"/>
-      ${loader(face, 'rgba(255,255,255,0.28)')}
-    </g>
   </g>`
 }
 
@@ -55,10 +74,6 @@ function markMasked(ink, id = 'cut') {
     <mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${CANVAS.w}" height="${CANVAS.h}">
       <polygon points="${BODY}" fill="#fff" stroke="#fff" stroke-width="${BODY_STROKE}" stroke-linejoin="round"/>
       <polygon points="${FACE}" fill="#000" stroke="#000" stroke-width="${FACE_STROKE}" stroke-linejoin="round"/>
-      <g transform="${shear}">
-        <path d="${NOTCH}" fill="#fff"/>
-        ${loader('#000', 'rgba(0,0,0,0.65)')}
-      </g>
     </mask>
   </defs>
   <rect width="${CANVAS.w}" height="${CANVAS.h}" fill="${ink}" mask="url(#${id})"/>`

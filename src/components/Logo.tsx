@@ -20,9 +20,7 @@ export interface LogoProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
 export const Logo = memo(
   forwardRef<SVGSVGElement, LogoProps>(function Logo({ size = 24, title, ...props }, ref) {
     const mask = `logo-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
-    const { BODY, BODY_STROKE, FACE, FACE_STROKE, LEAN, NOTCH, LOADER, VIEW, CANVAS } = MARK
-    const { cx, cy, r, w } = LOADER
-    const o = 6.6
+    const { BODY, BODY_STROKE, FACE, FACE_STROKE, VIEW, CANVAS } = MARK
     return (
       <svg
         ref={ref}
@@ -41,14 +39,6 @@ export const Logo = memo(
           <mask id={mask} maskUnits="userSpaceOnUse" x="0" y="0" width={CANVAS.w} height={CANVAS.h}>
             <polygon points={BODY} fill="#fff" stroke="#fff" strokeWidth={BODY_STROKE} strokeLinejoin="round" />
             <polygon points={FACE} fill="#000" stroke="#000" strokeWidth={FACE_STROKE} strokeLinejoin="round" />
-            <g transform={`matrix(1 0 ${LEAN} 1 ${-LEAN * 350} 0)`}>
-              <path d={NOTCH} fill="#fff" />
-              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#000" strokeOpacity={0.65} strokeWidth={w} />
-              <path d={`M${cx} ${cy - r} A${r} ${r} 0 1 1 ${cx - r} ${cy}`} fill="none" stroke="#000" strokeWidth={w} strokeLinecap="round" />
-              <circle cx={cx - o} cy={cy - o} r={2.7} fill="none" stroke="#000" strokeWidth={2.2} />
-              <circle cx={cx + o} cy={cy + o} r={2.7} fill="none" stroke="#000" strokeWidth={2.2} />
-              <path d={`M${cx + 6.5} ${cy - 7.5} L${cx - 6.5} ${cy + 7.5}`} stroke="#000" strokeWidth={2.4} strokeLinecap="round" />
-            </g>
           </mask>
         </defs>
         <rect width={CANVAS.w} height={CANVAS.h} fill="currentColor" mask={`url(#${mask})`} />
