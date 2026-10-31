@@ -1,6 +1,8 @@
 <div align="center">
 
-<img src=".github/assets/banner.png" alt="HOVR" width="100%" />
+<img src=".github/assets/banner.png?v=2" alt="HOVR" width="560" />
+
+<br />
 
 **See how much of your AI coding tools' usage limits you have left, in a notch at the top of your screen.**
 
