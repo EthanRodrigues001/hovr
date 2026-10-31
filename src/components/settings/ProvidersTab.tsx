@@ -34,6 +34,8 @@ function ProviderRow({ p }: { p: ProviderStatus }) {
   const [open, setOpen] = useState(false)
   const [testing, setTesting] = useState(false)
 
+  // From the setting, not from p.enabled: that only changes after the next (slow, networked) refresh.
+  const enabled = !disabled.includes(p.id)
   const hasBars = (usage?.windows.length ?? 0) > 0
   const { tone, text } = describe(p, hasBars)
 
@@ -64,7 +66,7 @@ function ProviderRow({ p }: { p: ProviderStatus }) {
   }
 
   return (
-    <div className={`prow ${p.enabled ? '' : 'prow-off'} ${p.installed ? '' : 'prow-missing'}`}>
+    <div className={`prow ${enabled ? '' : 'prow-off'} ${p.installed ? '' : 'prow-missing'}`}>
       <div className="prow-main">
         <ProviderRing id={p.id} remaining={hasBars ? worstRemainingPercent(usage!.windows) : null} size={22} />
         <div className="prow-text">
@@ -75,12 +77,12 @@ function ProviderRow({ p }: { p: ProviderStatus }) {
           </div>
         </div>
         {p.installed && p.supportsLimits && (
-          <button className="btn btn-ghost" onClick={() => void test()} disabled={testing || !p.enabled} title="Read limits now">
+          <button className="btn btn-ghost" onClick={() => void test()} disabled={testing || !enabled} title="Read limits now">
             {testing ? <RefreshCw size={13} className="spin-icon" /> : <FlaskConical size={13} />}
             Test
           </button>
         )}
-        {p.installed && <Switch checked={p.enabled} onChange={toggle} label={`Show ${p.label}`} />}
+        {p.installed && <Switch checked={enabled} onChange={toggle} label={`Show ${p.label}`} />}
         <button className={`icon-btn chev ${open ? 'open' : ''}`} onClick={() => setOpen(!open)} aria-label="Details" aria-expanded={open}>
           <ChevronDown size={15} />
         </button>
