@@ -17,10 +17,16 @@ export interface LogoProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
  * surrounding text colour. The shapes come from scripts/make-icons.cjs, which also
  * renders the app icon, so the two never drift apart.
  */
+/** Arc from 12 o'clock, clockwise, covering `pct` percent of the ring. */
+function arc(cx: number, cy: number, r: number, pct: number): string {
+  const a = (pct / 100) * Math.PI * 2
+  return `M${cx} ${cy - r}A${r} ${r} 0 ${pct > 50 ? 1 : 0} 1 ${(cx + r * Math.sin(a)).toFixed(2)} ${(cy - r * Math.cos(a)).toFixed(2)}`
+}
+
 export const Logo = memo(
   forwardRef<SVGSVGElement, LogoProps>(function Logo({ size = 24, title, ...props }, ref) {
     const mask = `logo-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
-    const { BODY_PATH, FACE_PATH, VIEW, CANVAS } = MARK
+    const { BODY_PATH, FACE_PATH, NOTCH, VIEW, CANVAS } = MARK
     return (
       <svg
         ref={ref}
@@ -39,6 +45,22 @@ export const Logo = memo(
           <mask id={mask} maskUnits="userSpaceOnUse" x="0" y="0" width={CANVAS.w} height={CANVAS.h}>
             <path d={BODY_PATH} fill="#fff" />
             <path d={FACE_PATH} fill="#000" />
+            <g transform={`matrix(1 0 ${NOTCH.lean} 1 ${-NOTCH.lean * NOTCH.top} 0)`}>
+              <path d={NOTCH.d} fill="#fff" />
+              {NOTCH.items.map(({ cx, cy, pct }) => (
+                <g key={cx}>
+                  {pct >= 100 ? (
+                    <circle cx={cx} cy={cy} r={NOTCH.r} fill="none" stroke="#000" strokeWidth={NOTCH.w} />
+                  ) : (
+                    <>
+                      <circle cx={cx} cy={cy} r={NOTCH.r} fill="none" stroke="#000" strokeOpacity={0.35} strokeWidth={NOTCH.w} />
+                      <path d={arc(cx, cy, NOTCH.r, pct)} fill="none" stroke="#000" strokeWidth={NOTCH.w} strokeLinecap="round" />
+                    </>
+                  )}
+                  <rect x={cx + NOTCH.bar.dx} y={cy - NOTCH.bar.h / 2} width={NOTCH.bar.w} height={NOTCH.bar.h} rx={NOTCH.bar.h / 2} fill="#000" />
+                </g>
+              ))}
+            </g>
           </mask>
         </defs>
         <rect width={CANVAS.w} height={CANVAS.h} fill="currentColor" mask={`url(#${mask})`} />
