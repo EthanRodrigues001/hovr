@@ -4,7 +4,7 @@
  * with how much of it is used, and the next one. Windows repeat on a fixed cadence, so
  * all of it follows from one reading (reset time + window length).
  */
-import { type CSSProperties, useEffect, useMemo, useState } from 'react'
+import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { ProviderId, UsageWindow } from '../../../shared/usage'
 import { remainingPercent } from '../../../shared/usageMath'
 import { paceOf } from '../../../shared/usageMath'
@@ -14,10 +14,11 @@ import { PROVIDER_META, remainingTone } from '../../lib/providers'
 import { SegmentBar, type BarSegment } from './SegmentBar'
 import { useStore } from '../../store/appStore'
 import { ProviderRing } from '../ProviderRing'
-import { Segmented } from '../ui'
+import { ProviderLogo } from '../ProviderLogo'
 import { useHeatTip } from './HeatTip'
 
 const DAY = 86_400_000
+const LEFT_COL = 220 // keep in step with --left in analytics.css
 
 interface Lane {
   key: string
@@ -54,9 +55,78 @@ function resetBuckets(lanes: Array<{ resetsAt: number }>, now: number): BarSegme
   ]
 }
 
+/** A checkbox dropdown: pick which providers the timeline shows. Closes on outside click or Escape. */
+function ProviderFilter({
+  items,
+  hidden,
+  onToggle
+}: {
+  items: Array<{ id: ProviderId; name: string }>
+  hidden: ReadonlySet<ProviderId>
+  onToggle: (id: ProviderId) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const down = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('mousedown', down)
+    document.addEventListener('keydown', key)
+    return () => {
+      document.removeEventListener('mousedown', down)
+      document.removeEventListener('keydown', key)
+    }
+  }, [open])
+  const shown = items.length - hidden.size
+  return (
+    <div className="dd" ref={ref}>
+      <button type="button" className="dd-btn" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <span className="dd-stack">
+          {items
+            .filter((it) => !hidden.has(it.id))
+            .slice(0, 4)
+            .map((it) => (
+              <span key={it.id}>
+                <ProviderLogo id={it.id} size={14} />
+              </span>
+            ))}
+        </span>
+        {shown === items.length ? 'All providers' : `${shown} of ${items.length}`}
+        <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
+          <path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {open && (
+        <div className="dd-menu" role="menu">
+          <div className="dd-label">Show providers</div>
+          {items.map((it) => {
+            const on = !hidden.has(it.id)
+            return (
+              <button key={it.id} type="button" role="menuitemcheckbox" aria-checked={on} className="dd-item" onClick={() => onToggle(it.id)}>
+                <span className={`dd-check${on ? ' on' : ''}`}>
+                  {on && (
+                    <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
+                      <path d="M2 5.2 4.1 7.2 8 2.8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </span>
+                <ProviderLogo id={it.id} size={16} />
+                {it.name}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function TimelineTab() {
-  const [axisDays, setAxisDays] = useState<14 | 28>(14)
-  const backDays = axisDays / 2
+  const axisDays = 30
+  const backDays = 0
   const providers = useStore((s) => s.providers)
   const usage = useStore((s) => s.usage)
   const [now, setNow] = useState(() => Date.now())
@@ -66,6 +136,43 @@ export function TimelineTab() {
   }, [])
   const tip = useHeatTip()
 
+  // Mouse wheel over the chart zooms the range (3 to 30 days in view); Shift+wheel or a sideways swipe pans.
+  const [view, setView] = useState(7)
+  const [scroller, setScroller] = useState<HTMLDivElement | null>(null)
+  const anchor = useRef<{ day: number; px: number } | null>(null)
+  useEffect(() => {
+    const el = scroller
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      const sideways = e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)
+      const onDates = (e.target as HTMLElement).closest('.tl-head') !== null
+      // Plain wheel over the rows keeps scrolling the page; zoom needs Ctrl or the date row.
+      if (!sideways && !e.ctrlKey && !onDates) return
+      e.preventDefault()
+      if (sideways) {
+        el.scrollLeft += e.shiftKey ? e.deltaY : e.deltaX
+        return
+      }
+      const laneW = el.clientWidth - LEFT_COL
+      const px = Math.max(0, Math.min(laneW, e.clientX - el.getBoundingClientRect().left - LEFT_COL))
+      setView((v) => {
+        const next = Math.max(3, Math.min(axisDays, v * (e.deltaY > 0 ? 1.12 : 1 / 1.12)))
+        anchor.current = { day: ((el.scrollLeft + px) * v) / laneW, px }
+        return next
+      })
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [axisDays, scroller])
+  useLayoutEffect(() => {
+    const el = scroller
+    const a = anchor.current
+    if (!el || !a) return
+    anchor.current = null
+    const laneW = el.clientWidth - LEFT_COL
+    el.scrollLeft = (a.day * laneW) / view - a.px
+  }, [view, scroller])
+
   const axisStart = useMemo(() => {
     const d = new Date(now)
     d.setHours(0, 0, 0, 0)
@@ -74,7 +181,10 @@ export function TimelineTab() {
   const axisLen = axisDays * DAY
   const pct = (t: number) => Math.max(0, Math.min(100, ((t - axisStart) / axisLen) * 100))
 
-  const { groups, skipped } = useMemo(() => {
+  const [hidden, setHidden] = useState<ReadonlySet<ProviderId>>(new Set())
+  const [pinned, setPinned] = useState<string | null>(null)
+
+  const { allGroups, skipped } = useMemo(() => {
     const out: Group[] = []
     let skip = 0
     for (const p of providers) {
@@ -91,8 +201,17 @@ export function TimelineTab() {
       }
       if (lanes.length) out.push({ provider: p.id, name: PROVIDER_META[p.id].short, plan: p.plan, lanes })
     }
-    return { groups: out, skipped: skip }
+    return { allGroups: out, skipped: skip }
   }, [providers, usage])
+
+  const groups = useMemo(() => allGroups.filter((g) => !hidden.has(g.provider)), [allGroups, hidden])
+  const toggleProvider = (id: ProviderId) =>
+    setHidden((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else if (allGroups.length - next.size > 1) next.add(id) // keep at least one visible
+      return next
+    })
 
   const flat: Flat[] = useMemo(
     () => groups.flatMap((g) => g.lanes.map((l) => ({ ...l, provider: g.provider, name: g.name }))),
@@ -113,7 +232,35 @@ export function TimelineTab() {
   const today = new Date(now).setHours(0, 0, 0, 0)
   const nowPct = pct(now)
 
-  if (groups.length === 0) {
+  /** The hover / pinned detail for one window. */
+  const detail = (name: string, l: Lane) => {
+    const used = Math.max(0, Math.min(100, l.window.usedPercent))
+    const pace = paceOf(l.window, now)
+    const fc = forecastOf(l.window, now)
+    const runOut = fc && fc.runOutAt !== null && fc.runOutAt > now && fc.elapsed >= 0.05 ? fc.runOutAt : null
+    return (
+      <>
+        <b>
+          {name} · {l.window.label}
+        </b>
+        <span>
+          {Math.round(used)}% used{pace ? ` · ${pace === 'ahead' ? 'ahead of pace' : pace === 'under' ? 'under pace' : 'on pace'}` : ''}
+        </span>
+        <span>
+          {weekdayTime(l.startsAt, now)} → {weekdayTime(l.resetsAt, now)}
+        </span>
+        <span>Resets in {span(Math.max(0, l.resetsAt - now))}</span>
+        {runOut !== null && fc && (
+          <span className="tl-warn">
+            Runs out {weekdayTime(runOut, now)} · locked {span(fc.lockedMs)}
+          </span>
+        )}
+      </>
+    )
+  }
+  const pinnedLane = pinned ? flat.find((l) => l.key === pinned) : undefined
+
+  if (allGroups.length === 0) {
     return (
       <div className="an-empty">
         <p>No limits with a known reset time yet.</p>
@@ -151,137 +298,105 @@ export function TimelineTab() {
         <SegmentBar segments={resetBuckets(flat, now)} />
       </section>
       <div className="tl-tools">
-        <span className="muted">Each limit as a window on the calendar: the one that ended, the current one, and the next.</span>
-        <Segmented<14 | 28> value={axisDays} onChange={setAxisDays} options={[{ value: 14, label: '2 weeks' }, { value: 28, label: '4 weeks' }]} />
+        <h3>
+          Limit windows <small>Scroll the dates or Ctrl + scroll to zoom · Shift + scroll to pan</small>
+        </h3>
+        {allGroups.length > 1 && (
+          <ProviderFilter
+            items={allGroups.map((g) => ({ id: g.provider, name: g.name }))}
+            hidden={hidden}
+            onToggle={toggleProvider}
+          />
+        )}
       </div>
-      <div className="tl" style={{ '--cols': axisDays } as CSSProperties}>
-      <div className="tl-head">
-        <div className="tl-left tl-title">
-          Limit <span>· Used</span>
+      {pinnedLane && (
+        <div className="tl-pin" style={{ '--acc': PROVIDER_META[pinnedLane.provider].accent } as CSSProperties}>
+          <div className="tl-pin-body">{detail(pinnedLane.name, pinnedLane)}</div>
+          <button type="button" className="tl-pin-x" aria-label="Unpin" onClick={() => setPinned(null)}>
+            ×
+          </button>
         </div>
-        <div className="tl-days">
-          {days.map((d) => (
-            <div key={d} className={d === today ? 'on' : ''}>
-              <span>{new Date(d).toLocaleDateString(undefined, { weekday: 'short' })}</span>
-              <b>{shortDate(d)}</b>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {groups.map((g) => (
-        <section key={g.provider} className="tl-group">
-          <div className="tl-row tl-ghead">
-            <div className="tl-left">
-              <ProviderRing id={g.provider} remaining={Math.min(...g.lanes.map((l) => remainingPercent(l.window)))} size={22} />
-              <b>{g.name}</b>
-              {g.plan && <em>{g.plan}</em>}
-              <span>
-                {g.lanes.length} {g.lanes.length === 1 ? 'limit' : 'limits'}
-              </span>
-            </div>
-            <div className="tl-lane">
-              <i className="tl-past" style={{ width: `${nowPct}%` }} />
-              <i className="tl-today" style={{ left: `${pct(today)}%` }} />
-              <i className="tl-now" style={{ left: `${nowPct}%` }} />
-            </div>
+      )}
+      <div className="tl-scroll" ref={setScroller}>
+      <div className="tl" style={{ '--cols': axisDays, '--view': view } as CSSProperties}>
+        <div className="tl-head">
+          <div className="tl-left tl-title">Limit</div>
+          <div className="tl-days">
+            {days.map((d, i) => {
+              const dt = new Date(d)
+              const month = dt.toLocaleDateString(undefined, { month: 'short' })
+              // Wide columns spell out the date; narrow ones keep the day number and mark each month start.
+              const roomy = view <= 10
+              const top = roomy
+                ? dt.toLocaleDateString(undefined, { weekday: 'short' })
+                : i === 0 || dt.getDate() === 1
+                  ? month
+                  : dt.toLocaleDateString(undefined, { weekday: 'narrow' })
+              return (
+                <div key={d} className={`${d === today ? 'on' : ''}${!roomy && (i === 0 || dt.getDate() === 1) ? ' mo' : ''}`}>
+                  <span>{top}</span>
+                  <b>{roomy ? shortDate(d) : dt.getDate()}</b>
+                </div>
+              )
+            })}
           </div>
-          {g.lanes.map((l) => {
-            const used = Math.max(0, Math.min(100, l.window.usedPercent))
-            const tone = remainingTone(remainingPercent(l.window))
-            const pace = paceOf(l.window, now)
-            const fc = forecastOf(l.window, now)
-            const runOut = fc && fc.runOutAt !== null && fc.runOutAt > now && fc.elapsed >= 0.05 ? fc.runOutAt : null
-            const prevStart = l.startsAt - l.length
-            const nextEnd = l.resetsAt + l.length
-            const cur = { left: pct(l.startsAt), right: pct(l.resetsAt) }
-            const narrow = cur.right - cur.left < 14
-            const elapsed = Math.max(0, Math.min(1, (now - l.startsAt) / l.length))
-            const info = (
-              <>
-                <b>
-                  {g.name} · {l.window.label}
-                </b>
-                <span>
-                  {Math.round(used)}% used{pace ? ` · ${pace === 'ahead' ? 'ahead of pace' : pace === 'under' ? 'under pace' : 'on pace'}` : ''}
-                </span>
-                <span>
-                  {weekdayTime(l.startsAt, now)} → {weekdayTime(l.resetsAt, now)}
-                </span>
-                <span>Resets in {span(Math.max(0, l.resetsAt - now))}</span>
-                {runOut !== null && fc && (
-                  <span className="tl-warn">
-                    Runs out {weekdayTime(runOut, now)} · locked {span(fc.lockedMs)}
-                  </span>
-                )}
-              </>
-            )
-            return (
-              <div key={l.key} className="tl-row" style={{ '--acc': PROVIDER_META[g.provider].accent } as CSSProperties}>
-                <div className="tl-left tl-limit">
-                  <span className="tl-name" title={l.window.label}>
-                    {l.window.label}
-                  </span>
-                  <span className={`tl-chip tone-chip-${tone}`}>
-                    <i />
-                    {Math.round(used)}%
-                  </span>
-                </div>
-                <div className="tl-lane" style={{ '--acc': PROVIDER_META[g.provider].accent } as CSSProperties}>
-                  <i className="tl-past" style={{ width: `${nowPct}%` }} />
-                  <i className="tl-today" style={{ left: `${pct(today)}%` }} />
-                  {pct(l.startsAt) - pct(prevStart) > 5 && pct(l.startsAt) > 0 && (
-                    <div
-                      className="tl-block tl-ended"
-                      style={{ left: `${pct(prevStart)}%`, width: `${pct(l.startsAt) - pct(prevStart)}%` }}
-                    >
-                      <span>Ended {shortDate(l.startsAt)}</span>
-                    </div>
-                  )}
-                  <div
-                    className={`tl-block tl-cur tl-tone-${tone}`}
-                    style={{ left: `${cur.left}%`, width: `${Math.max(0.6, cur.right - cur.left)}%`, '--used': `${used}%` } as CSSProperties}
-                    onMouseEnter={(e) => tip.show(e, info)}
-                    onMouseLeave={tip.hide}
-                  >
-                    {!narrow && (
-                      <span>
-                        {Math.round(used)}% Used · {weekdayTime(l.resetsAt, now)}
-                        {runOut !== null && <em className="tl-warn"> · out {weekdayTime(runOut, now)}</em>}
+        </div>
+
+        {groups.map((g) => (
+          <section key={g.provider} className="tl-group">
+            {g.lanes.map((l) => {
+              const used = Math.max(0, Math.min(100, l.window.usedPercent))
+              const tone = remainingTone(remainingPercent(l.window))
+              const fc = forecastOf(l.window, now)
+              const runOut = fc && fc.runOutAt !== null && fc.runOutAt > now && fc.elapsed >= 0.05 ? fc.runOutAt : null
+              const cur = { left: pct(l.startsAt), right: pct(l.resetsAt) }
+              const clipped = l.startsAt < axisStart
+              const elapsed = Math.max(0, Math.min(1, (nowPct - cur.left) / Math.max(0.01, cur.right - cur.left)))
+              const info = detail(g.name, l)
+              const label = `resets ${weekdayTime(l.resetsAt, now)}`
+              return (
+                <div key={l.key} className="tl-row" style={{ '--acc': PROVIDER_META[g.provider].accent } as CSSProperties}>
+                  <div className="tl-left tl-limit">
+                    <ProviderLogo id={g.provider} size={18} />
+                    <span className="tl-who">
+                      <span className="tl-name" title={`${g.name} ${l.window.label}`}>
+                        {l.window.label}
                       </span>
-                    )}
-                    <div className="tl-prog">
-                      <i style={{ width: `${used}%` }} />
-                      <u style={{ left: `${elapsed * 100}%` }} />
-                    </div>
+                      <small>
+                        {g.name}
+                        {g.plan ? ` · ${g.plan}` : ''}
+                      </small>
+                    </span>
+                    <span className="tl-pct">{Math.round(used)}%</span>
                   </div>
-                  {!narrow && runOut !== null && pct(runOut) < 100 && pct(l.resetsAt) - pct(runOut) > 0.4 && (
-                    <i className="tl-lock" style={{ left: `${pct(runOut)}%`, width: `${pct(l.resetsAt) - pct(runOut)}%` }} />
-                  )}
-                  {narrow && (
-                    <div className="tl-outside" style={{ left: `${cur.right + 2.4}%` }}>
-                      <span>
-                        {Math.round(used)}% Used · resets {weekdayTime(l.resetsAt, now)}
-                      </span>
-                      <div className="tl-mini">
-                        <i style={{ width: `${used}%` }} />
-                        <u style={{ left: `${elapsed * 100}%` }} />
-                      </div>
-                      {runOut !== null && fc && <span className="tl-warn">Out ~{weekdayTime(runOut, now)}</span>}
+                  <div className="tl-lane">
+                    <i className="tl-past" style={{ width: `${nowPct}%` }} />
+                    <i className="tl-today" style={{ left: `${pct(today)}%` }} />
+                    <div
+                      className={`tl-block tl-cur${pinned === l.key ? ' pinned' : ''}${clipped ? ' clip-l' : ''}`}
+                      style={{ left: `${cur.left}%`, width: `${Math.max(0.6, cur.right - cur.left)}%` } as CSSProperties}
+                      onMouseEnter={(e) => tip.show(e, info)}
+                      onMouseLeave={tip.hide}
+                      onClick={() => setPinned(pinned === l.key ? null : l.key)}
+                    >
+                      <i className="tl-elapsed" style={{ width: `${elapsed * 100}%` }} />
+                      <i className={`tl-fill tl-tone-${tone}`} style={{ width: `${used}%` }} />
                     </div>
-                  )}
-                  {pct(l.resetsAt) < 100 && !narrow && (
-                    <div className="tl-block tl-next" style={{ left: `${pct(l.resetsAt)}%`, width: `${pct(nextEnd) - pct(l.resetsAt)}%` }}>
-                      <span>Next · {shortDate(nextEnd)}</span>
+                    {runOut !== null && pct(runOut) < 100 && pct(l.resetsAt) - pct(runOut) > 0.4 && (
+                      <i className="tl-lock" style={{ left: `${pct(runOut)}%`, width: `${pct(l.resetsAt) - pct(runOut)}%` }} />
+                    )}
+                    <div className="tl-label" style={{ left: `${nowPct + 0.8}%` }}>
+                      {label}
+                      {runOut !== null && <span className="tl-warn"> · out {weekdayTime(runOut, now)}</span>}
                     </div>
-                  )}
-                  <i className="tl-now" style={{ left: `${nowPct}%` }} />
+                    <i className="tl-now" style={{ left: `${nowPct}%` }} />
+                  </div>
                 </div>
-              </div>
-            )
-          })}
-        </section>
-      ))}
+              )
+            })}
+          </section>
+        ))}
+      </div>
       </div>
       <section className="sec tl-up">
         <header className="sec-head">
