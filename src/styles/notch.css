@@ -825,3 +825,117 @@ kbd {
 .pcount {
   margin: 0 0 14px;
 }
+
+/* ===== settings: one rhythm for every tab ===== */
+.sheet-scroll {
+  padding: 26px 30px 30px;
+}
+.tab-head {
+  align-items: center;
+  min-height: 52px;
+  margin-bottom: 20px;
+  padding-right: 40px;
+}
+.tab-head h2 {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+.tab-head .muted {
+  max-width: 470px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.about-head {
+  gap: 16px;
+}
+
+/* group headings, shared by General (sgroup), Providers (pgroup) and About (about-block) */
+.sgroup,
+.pgroup h3,
+.about-block h3 {
+  margin: 28px 0 6px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.tab-body > .sgroup:first-of-type,
+.tab-body > .pgroup:first-of-type h3,
+.tab-body > .about-block:first-of-type h3 {
+  margin-top: 4px;
+}
+.pgroup h3 {
+  margin-bottom: 10px;
+}
+
+/* form rows: text on the left, every control in one right-aligned cluster */
+.srow {
+  gap: 28px;
+  padding: 14px 0;
+}
+.srow-text {
+  flex: 1;
+  min-width: 0;
+}
+.srow-title {
+  font-size: 13.5px;
+  line-height: 1.3;
+}
+.srow-hint {
+  max-width: 420px;
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.srow-ctl {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* provider rows */
+.prow {
+  margin-bottom: 10px;
+}
+.prow-main {
+  gap: 14px;
+  padding: 12px 12px 12px 14px;
+  min-height: 62px;
+}
+.prow-name {
+  font-size: 13.5px;
+  line-height: 1.3;
+}
+.prow-status {
+  margin-top: 2px;
+  font-size: 12px;
+}
+.prow-detail {
+  padding: 2px 16px 14px 50px;
+  line-height: 1.5;
+}
+.pcount {
+  margin: 0 0 6px;
+}
+
+/* about */
+.about-block {
+  max-width: 560px;
+}
+.about-block p {
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.about-actions {
+  margin-top: 28px;
+}
+.pcount {
+  margin: 0 0 14px;
+}
+.pcount + .pgroup h3 {
+  margin-top: 24px;
+}
