@@ -19,6 +19,8 @@ export interface EdgeApi {
   getDisplays: () => Promise<DisplayInfo[]>
   getUsage: () => Promise<UsageState>
   refreshUsage: () => Promise<UsageState>
+  /** Shows a test notification; false when the system cannot. */
+  testAlert: () => Promise<boolean>
   getHistory: (days: number) => Promise<HistoryReport>
   getSamples: (provider: string, windowId: string, since: number) => Promise<import('./usage').UsageSample[]>
 

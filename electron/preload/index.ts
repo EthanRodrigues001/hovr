@@ -34,6 +34,7 @@ const api: EdgeApi = {
   setInteractive: (value: boolean) => invoke('window:set-interactive', value),
   getUsage: () => invoke('usage:get'),
   refreshUsage: () => invoke('usage:refresh'),
+  testAlert: () => invoke('alerts:test'),
   getHistory: (days: number) => invoke('history:get', days),
   getSamples: (provider, windowId, since) => invoke('usage:samples', provider, windowId, since),
 

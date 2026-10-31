@@ -15,6 +15,7 @@ import { rebuildTrayMenu } from './tray'
 import { quitAndInstallUpdate } from './updater'
 import { getHistory } from './history/historyService'
 import { readSamples } from './usageSamples'
+import { sendTestAlert } from './alerts'
 import { getUsageState, onUsageSettingsChanged, refreshUsage } from './usageService'
 
 /**
@@ -109,6 +110,7 @@ export function registerIpc(): void {
 
 
   handle('usage:get', () => getUsageState())
+  handle('alerts:test', () => sendTestAlert())
   handle('usage:refresh', async () => {
     await refreshUsage(true)
     return getUsageState()

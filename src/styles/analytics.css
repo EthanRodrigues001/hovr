@@ -1727,3 +1727,7 @@
   height: 9px;
   border-radius: 2px;
 }
+.tip-dim2 {
+  color: var(--text-tertiary);
+  font-size: 11px;
+}

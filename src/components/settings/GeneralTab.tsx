@@ -66,6 +66,9 @@ export function GeneralTab() {
 
       <h3 className="sgroup">Usage data</h3>
       <Row title="Alerts" hint="A notification when a limit is nearly used up or will run out before it resets.">
+        <button className="btn btn-ghost" onClick={() => void edge.testAlert()}>
+          Send test
+        </button>
         <Switch checked={settings.notifications} onChange={(notifications) => void patch({ notifications })} label="Alerts" />
       </Row>
 

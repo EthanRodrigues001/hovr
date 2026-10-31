@@ -9,10 +9,13 @@
  * falls sharply. Nothing fires for a state that was already true when hovr started.
  */
 import { Notification } from 'electron'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { forecastOf } from '../../shared/forecast'
 import { isNewWindow } from '../../shared/alertLogic'
 import type { UsageState } from '../../shared/usage'
 import { remainingPercent } from '../../shared/usageMath'
+import { PATHS } from '../store/paths'
 import { loadSettings } from '../store/settings'
 
 const LOW_AT = 10
@@ -27,6 +30,40 @@ interface Cycle {
 }
 const cycles = new Map<string, Cycle>()
 let baselined = false
+let loaded = false
+
+/* What was already announced is kept on disk, so restarting hovr neither repeats an alert nor swallows a new one. */
+const stateFile = () => join(PATHS.root(), 'alerts-state.json')
+
+function loadState(): void {
+  if (loaded) return
+  loaded = true
+  try {
+    const parsed = JSON.parse(readFileSync(stateFile(), 'utf8')) as Record<string, Cycle>
+    for (const [key, c] of Object.entries(parsed)) {
+      if (c && typeof c.resetsAt === 'number' && typeof c.used === 'number') cycles.set(key, c)
+    }
+    baselined = true // not the first run: new conditions are news
+  } catch {
+    /* first run: the first pass only records the state */
+  }
+}
+
+function saveState(): void {
+  try {
+    mkdirSync(dirname(stateFile()), { recursive: true })
+    writeFileSync(stateFile(), JSON.stringify(Object.fromEntries(cycles)), 'utf8')
+  } catch {
+    /* best effort */
+  }
+}
+
+/** For the "Send a test alert" button: true when the system can show notifications. */
+export function sendTestAlert(): boolean {
+  const ok = Notification.isSupported()
+  if (ok) notify('HOVR', 'Alerts are working. You will be told when a limit is nearly used up.')
+  return ok
+}
 
 function notify(title: string, body: string): void {
   try {
@@ -37,6 +74,7 @@ function notify(title: string, body: string): void {
 }
 
 export function checkAlerts(state: UsageState, now = Date.now()): void {
+  loadState()
   const enabled = loadSettings().notifications
   const names = new Map(state.providers.map((p) => [p.id, p.label]))
   for (const [provider, limits] of Object.entries(state.usage)) {
@@ -71,4 +109,5 @@ export function checkAlerts(state: UsageState, now = Date.now()): void {
     }
   }
   baselined = true
+  saveState()
 }

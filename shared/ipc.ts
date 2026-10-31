@@ -38,6 +38,7 @@ export interface InvokeMap {
 
   /** Force a refresh of every provider; resolves once all reads settle. */
   'usage:refresh': { args: []; result: UsageState }
+  'alerts:test': { args: []; result: boolean }
 
   /** Recorded used % readings for one limit window since `since` (ms). */
   'usage:samples': { args: [provider: string, windowId: string, since: number]; result: import('./usage').UsageSample[] }

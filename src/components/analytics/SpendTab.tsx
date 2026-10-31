@@ -54,7 +54,7 @@ function ChartTooltip({ active, payload, label, money }: { active?: boolean; pay
   )
 }
 
-function ShareTip({ active, payload }: { active?: boolean; payload?: Array<{ payload: { name: string; value: number; fill: string } }> }) {
+function ShareTip({ active, payload }: { active?: boolean; payload?: Array<{ payload: { name: string; value: number; fill: string; exact: number; amount: string } }> }) {
   if (!active || !payload?.length) return null
   const p = payload[0].payload
   return (
@@ -62,7 +62,10 @@ function ShareTip({ active, payload }: { active?: boolean; payload?: Array<{ pay
       <div className="tip-r">
         <i style={{ background: p.fill }} />
         <span>{p.name}</span>
-        <b>{p.value}%</b>
+        <b>{p.exact > 0 && p.exact < 0.1 ? '<0.1' : p.exact >= 99.95 ? '100' : p.exact.toFixed(1)}%</b>
+      </div>
+      <div className="tip-r tip-dim2">
+        <span>{p.amount}</span>
       </div>
     </div>
   )
@@ -96,7 +99,9 @@ function Body({ report, days }: { report: HistoryReport; days: number }) {
   const radial = report.byProvider.map((p) => ({
     name: PROVIDER_META[p.provider].short,
     value: Math.max(1, Math.round(((priced ? (p.costUsd ?? 0) / (report.totals.costUsd || 1) : p.tokens / (tokens || 1))) * 100)),
-    fill: PROVIDER_META[p.provider].accent
+    fill: PROVIDER_META[p.provider].accent,
+    exact: (priced ? (p.costUsd ?? 0) / (report.totals.costUsd || 1) : p.tokens / (tokens || 1)) * 100,
+    amount: priced ? usd(p.costUsd) : `${compact(p.tokens)} tokens`
   }))
   const headValue = priced ? usd(report.totals.costUsd) : compact(tokens)
   const share = (cost: number | null, toks: number) => (priced ? (report.totals.costUsd ? (cost ?? 0) / report.totals.costUsd : 0) : tokens ? toks / tokens : 0)

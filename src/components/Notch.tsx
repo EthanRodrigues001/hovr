@@ -10,7 +10,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { BarChart3, ChevronRight, RefreshCw, Settings as Cog, X } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { NOTCH } from '../../shared/notch'
-import { worstRemainingPercent } from '../../shared/usageMath'
+import { primaryRemainingPercent } from '../../shared/usageMath'
 import type { ProviderStatus } from '../../shared/usage'
 import { closeNotch, registerNotchElement } from '../hooks/useNotchHover'
 import { remainingTone } from '../lib/providers'
@@ -43,7 +43,7 @@ function useChips(): Chip[] {
     for (const status of providers) {
       if (!status.enabled || !status.installed || !status.supportsLimits) continue
       const windows = usage[status.id]?.windows ?? []
-      if (windows.length > 0) chips.push({ status, remaining: worstRemainingPercent(windows) })
+      if (windows.length > 0) chips.push({ status, remaining: primaryRemainingPercent(windows) })
       // Signed in but failing: show a "?" so a silent outage is visible.
       // An expired login cannot be fixed from here, so it stays out of the pill (the card still lists it).
       else if (status.authState === 'authenticated' && status.lastError && !/token expired|sign in/i.test(status.lastError)) {
@@ -137,7 +137,7 @@ function UsageLayer({ onContentHeight }: { onContentHeight: (h: number) => void 
     <div className="layer">
       <div className="nhead" style={{ height: HEADER_H }}>
         <Logo size={15} />
-        <span className="nhead-title">Usage</span>
+        <span className="nhead-title">HOVR</span>
         <span className="spacer" />
         <button className={`icon-btn ${refreshing ? 'spin' : ''}`} onClick={() => void refresh()} title="Refresh now" aria-label="Refresh now">
           <RefreshCw size={15} />

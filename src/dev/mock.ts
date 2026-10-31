@@ -66,6 +66,7 @@ if (import.meta.env.DEV && params.get('mock')) {
     getDisplays: async () => [],
     getUsage: async () => sampleState(),
     refreshUsage: async () => sampleState(),
+    testAlert: async () => true,
     getHistory: async (days) => {
       const DAY = 86_400_000
       const byDay = Array.from({ length: days }, (_, i) => {

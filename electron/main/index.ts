@@ -8,7 +8,8 @@
  *   3. On 'window-all-closed' we DON'T quit (the notch is hidden, not closed).
  *   4. Quit from the tray menu tears everything down cleanly.
  */
-import { app, BrowserWindow, globalShortcut, session } from 'electron'
+import { app, BrowserWindow, globalShortcut, session, shell } from 'electron'
+import { join } from 'node:path'
 import { runtime } from './config'
 import { createWindow, getMainWindow, setVisible, startCursorPoll, stopCursorPoll, stopHeartbeat } from './window'
 import { createTray } from './tray'
@@ -49,9 +50,31 @@ app.on('before-quit', () => {
   globalShortcut.unregisterAll()
 })
 
+/**
+ * Windows labels a toast with the name of the Start Menu shortcut that carries the app's
+ * AppUserModelID. In development there is none, so toasts showed the raw id. This writes one
+ * named "HOVR" (with the icon); the installed app gets its own from the installer.
+ */
+function registerStartMenuShortcut(): void {
+  if (process.platform !== 'win32' || app.isPackaged) return
+  try {
+    const link = join(app.getPath('appData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'HOVR.lnk')
+    shell.writeShortcutLink(link, 'create', {
+      target: process.execPath,
+      args: app.getAppPath(),
+      appUserModelId: 'com.hovr.app',
+      icon: join(app.getAppPath(), 'resources', 'icon.ico'),
+      description: 'HOVR'
+    })
+  } catch {
+    /* cosmetic only */
+  }
+}
+
 app.whenReady().then(() => {
   // Branded native notifications on Windows.
-  app.setAppUserModelId('com.HOVR.app')
+  app.setAppUserModelId('com.hovr.app')
+  registerStartMenuShortcut()
 
   // Lock the renderer session down: deny every permission request.
   session.defaultSession.setPermissionRequestHandler((_wc, _perm, cb) => cb(false))

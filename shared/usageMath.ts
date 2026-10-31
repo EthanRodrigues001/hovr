@@ -194,6 +194,19 @@ export function formatResetsIn(window: UsageWindow, now: number): string | null 
 }
 
 /** Lowest remaining share across windows: the headline number for a collapsed notch. */
+/**
+ * What the collapsed pill shows for a tool: the remaining % of its shortest window (the 5-hour
+ * session), because that is the limit you hit first while working. A longer window that is
+ * lower (the weekly one) still shows in the card. Without window lengths it falls back to the
+ * tightest window.
+ */
+export function primaryRemainingPercent(windows: readonly UsageWindow[]): number | null {
+  const timed = windows.filter((w) => (w.windowDurationMins ?? 0) > 0)
+  if (timed.length === 0) return worstRemainingPercent(windows)
+  const shortest = timed.reduce((a, b) => ((b.windowDurationMins as number) < (a.windowDurationMins as number) ? b : a))
+  return remainingPercent(shortest)
+}
+
 export function worstRemainingPercent(windows: readonly UsageWindow[]): number | null {
   return windows.length === 0 ? null : Math.min(...windows.map(remainingPercent))
 }
