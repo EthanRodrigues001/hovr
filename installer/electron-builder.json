@@ -1,0 +1,13 @@
+{
+  "appId": "com.hovr.setup",
+  "productName": "HOVR Setup",
+  "electronVersion": "34.5.8",
+  "directories": { "output": "../dist-setup" },
+  "files": ["main.cjs", "preload.cjs", "index.html", "setup.css", "setup.js", "logo.svg", "icon.png", "package.json"],
+  "extraResources": [{ "from": "payload/payload.exe", "to": "payload.exe" }],
+  "asar": true,
+  "compression": "maximum",
+  "electronLanguages": ["en-US"],
+  "win": { "target": ["portable"], "icon": "../resources/icon.ico", "artifactName": "HOVR-Setup-${version}.exe" },
+  "portable": { "requestExecutionLevel": "user" }
+}

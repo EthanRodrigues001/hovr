@@ -22,3 +22,6 @@ reference/*
 !reference/INDEX.md
 
 .claude/
+
+installer/payload/
+dist-setup/

@@ -1,0 +1,34 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  font-size: 13px;
+  color: #f2f2f3;
+  background: radial-gradient(120% 90% at 50% -10%, #1b1b20 0%, #0b0b0d 62%);
+  user-select: none;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.bar { -webkit-app-region: drag; height: 38px; display: flex; align-items: center; padding-left: 16px; color: #8d8d95; font-size: 12px; }
+.bar-title { flex: 1; }
+.bar-btn { -webkit-app-region: no-drag; width: 46px; height: 38px; border: 0; background: none; color: #8d8d95; font-size: 13px; cursor: default; }
+.bar-btn:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+#close:hover { background: #c42b1c; }
+main { height: calc(100% - 38px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 56px 34px; }
+.logo { width: 92px; height: 92px; margin-bottom: 18px; }
+h1 { font-size: 26px; font-weight: 600; letter-spacing: 0.18em; margin-bottom: 8px; }
+p { color: #9a9aa3; line-height: 1.55; max-width: 380px; }
+.actions { display: flex; gap: 10px; margin-top: 28px; }
+button.btn {
+  min-width: 150px; height: 40px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06); color: #f2f2f3; font: inherit; font-weight: 600; cursor: default;
+}
+button.btn:hover { background: rgba(255, 255, 255, 0.11); }
+button.btn.primary { background: #f2f2f3; color: #0b0b0d; border-color: #f2f2f3; }
+button.btn.primary:hover { background: #fff; }
+button.btn.danger { color: #ff8a80; border-color: rgba(255, 138, 128, 0.35); }
+button.btn.danger:hover { background: rgba(255, 138, 128, 0.12); }
+.meter { width: 300px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.1); margin-top: 26px; overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; background: #f2f2f3; border-radius: 3px; transition: width 0.4s ease; }
+.fine { margin-top: 18px; font-size: 11.5px; color: #6f6f78; }
+.err { color: #ff8a80; margin-top: 14px; font-size: 12px; }
