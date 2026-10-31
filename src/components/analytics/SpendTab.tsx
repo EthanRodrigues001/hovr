@@ -17,19 +17,39 @@ import { TickBar } from './TickBar'
 const PROVIDERS: readonly HistoryProvider[] = ['claude', 'codex', 'antigravity']
 const KIND_COLORS = { input: '#52525b', cacheRead: '#71717a', cacheWrite: '#a1a1aa', output: '#e4e4e7' } as const
 
-function ChartTooltip({ active, payload, label, money }: { active?: boolean; payload?: Array<{ dataKey: string; value: number }>; label?: string; money: boolean }) {
+type DayDatum = { date: string } & Record<string, number | string>
+
+function ChartTooltip({ active, payload, label, money }: { active?: boolean; payload?: Array<{ payload: DayDatum }>; label?: string; money: boolean }) {
   if (!active || !payload?.length) return null
-  const rows = payload.filter((p) => p.value > 0)
+  const d = payload[0].payload
+  const rows = PROVIDERS.map((p) => ({ p, cost: Number(d[p] ?? 0), tokens: Number(d[`${p}_t`] ?? 0) })).filter((r) => r.cost > 0 || r.tokens > 0)
+  const costTotal = rows.reduce((n, r) => n + r.cost, 0)
+  const tokenTotal = rows.reduce((n, r) => n + r.tokens, 0)
   return (
-    <div className="tip">
+    <div className="tip tip-wide">
       <div className="tip-h">{label ? dayLabel(label) : ''}</div>
+      {money && (
+        <div className="tip-r tip-cols">
+          <span />
+          <b>Cost</b>
+          <b>Tokens</b>
+        </div>
+      )}
       {rows.map((r) => (
-        <div key={r.dataKey} className="tip-r">
-          <i style={{ background: PROVIDER_META[r.dataKey as HistoryProvider].accent }} />
-          <span>{PROVIDER_META[r.dataKey as HistoryProvider].short}</span>
-          <b>{money ? usd(r.value) : compact(r.value)}</b>
+        <div key={r.p} className="tip-r">
+          <i style={{ background: PROVIDER_META[r.p].accent }} />
+          <span>{PROVIDER_META[r.p].short}</span>
+          {money && <b>{usd(r.cost)}</b>}
+          <b className={money ? 'tip-dim' : ''}>{compact(money ? r.tokens : r.cost)}</b>
         </div>
       ))}
+      {rows.length > 1 && (
+        <div className="tip-r tip-total">
+          <span>Total</span>
+          {money && <b>{usd(costTotal)}</b>}
+          <b className={money ? 'tip-dim' : ''}>{compact(money ? tokenTotal : costTotal)}</b>
+        </div>
+      )}
     </div>
   )
 }
@@ -59,7 +79,10 @@ function Body({ report, days }: { report: HistoryReport; days: number }) {
         date: d.date,
         claude: priced ? (d.costByProvider.claude ?? 0) : (d.byProvider.claude ?? 0),
         codex: priced ? (d.costByProvider.codex ?? 0) : (d.byProvider.codex ?? 0),
-        antigravity: priced ? (d.costByProvider.antigravity ?? 0) : (d.byProvider.antigravity ?? 0)
+        antigravity: priced ? (d.costByProvider.antigravity ?? 0) : (d.byProvider.antigravity ?? 0),
+        claude_t: d.byProvider.claude ?? 0,
+        codex_t: d.byProvider.codex ?? 0,
+        antigravity_t: d.byProvider.antigravity ?? 0
       })),
     [report, priced]
   )

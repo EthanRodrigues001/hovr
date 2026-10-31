@@ -1438,3 +1438,153 @@
   background: none;
   color: #fff;
 }
+
+/* ===== full-bleed layout: every divider runs edge to edge and meets the next ===== */
+.an-scroll:has(.sp),
+.an-scroll:has(.fc) {
+  padding: 0;
+  gap: 0;
+}
+
+/* Spend: stacked bands, one line between each */
+.sp {
+  gap: 0;
+}
+.sp > * {
+  margin: 0;
+  padding: 18px 22px;
+}
+.sp > .sp-top {
+  padding: 0;
+}
+.sp-sum {
+  padding: 18px 22px;
+}
+.sp-chart {
+  padding: 18px 22px;
+}
+.sp > .sec,
+.sp > .statstrip,
+.sp > .sp-foot {
+  border-top: 1px solid var(--hairline);
+}
+.sp > .statstrip {
+  padding: 0;
+  border-bottom: 0;
+}
+.sp .statstrip > div,
+.sp .statstrip > div:first-child {
+  padding: 16px 22px;
+}
+.sp > .sp-foot {
+  padding: 14px 22px 18px;
+}
+.sp .sec-head {
+  margin-bottom: 8px;
+}
+.sp > .sp-top {
+  border-bottom: 0;
+}
+
+/* Forecast: two columns that fill the height, separated by one full-height line */
+.fc {
+  gap: 0;
+  align-items: stretch;
+  min-height: 100%;
+}
+.fc-main {
+  padding: 18px 0 0;
+}
+.fc-main > * {
+  margin-left: 22px;
+  margin-right: 22px;
+}
+.fc-main > .fc-axis,
+.fc-main > .fc-key {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 22px;
+  padding-right: 22px;
+}
+.fc-main > .fc-key {
+  border-top: 1px solid var(--hairline);
+  margin-top: 8px;
+  padding-top: 14px;
+}
+.fc-main > .fc-rows {
+  margin-left: 0;
+  margin-right: 0;
+}
+.fc-main > .fc-rows .fc-row {
+  padding-left: 22px;
+  padding-right: 22px;
+}
+.fc-main > .fc-table {
+  margin-bottom: 18px;
+}
+.fc-side {
+  padding: 18px 0 0;
+  border-left: 1px solid var(--hairline);
+}
+.fc-side > * {
+  margin-left: 22px;
+  margin-right: 22px;
+}
+.fc-side > .fc-detail {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 22px;
+  padding-right: 22px;
+}
+
+/* chart tooltip with cost and token columns */
+.tip-wide {
+  min-width: 190px;
+}
+.tip-r b {
+  min-width: 52px;
+  text-align: right;
+}
+.tip-cols b {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.tip-dim {
+  color: var(--text-tertiary);
+  font-weight: 450;
+}
+.tip-total {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--hairline);
+}
+.sp > .sec {
+  padding: 18px 22px 10px;
+  margin: 0;
+}
+.sp-top {
+  grid-template-columns: 350px minmax(0, 1fr);
+}
+.fc-main > .fc-rows .fc-row {
+  width: 100%;
+  margin: 0;
+  border-radius: 0;
+}
+.fc-main > .fc-table {
+  width: calc(100% - 44px);
+}
+/* the vertical divider is drawn by the grid itself so it always spans the full band */
+.sp > .sp-top {
+  background: linear-gradient(var(--hairline), var(--hairline)) 350px 0 / 1px 100% no-repeat;
+}
+.sp-sum {
+  border-right: 0;
+}
+.sp > .statstrip,
+.sp > .sp-foot,
+.sp > .sec {
+  margin: 0;
+}

@@ -23,6 +23,13 @@ export function parseCursorUsage(body: unknown, checkedAt: string): UsageLimits 
   // Epoch milliseconds, delivered as a string or a number.
   const endMs = Number(body.billingCycleEnd)
   const resetsAt = Number.isFinite(endMs) && endMs > 0 ? new Date(endMs).toISOString() : undefined
+  // Forecast and Timeline need to know when the window started: use the billing cycle's own
+  // start when the response has it, otherwise assume a 30-day cycle.
+  const startMs = Number(body.billingCycleStart)
+  const cycleMins =
+    Number.isFinite(startMs) && Number.isFinite(endMs) && endMs > startMs && startMs > 0
+      ? Math.round((endMs - startMs) / 60_000)
+      : 30 * 24 * 60
   const plan = isRecord(body.planUsage) ? body.planUsage : undefined
   const windows: UsageWindow[] = []
   for (const { id, label } of WINDOWS) {
@@ -33,7 +40,7 @@ export function parseCursorUsage(body: unknown, checkedAt: string): UsageLimits 
       kind: 'monthly',
       label,
       usedPercent: clampPercent(used),
-      ...(resetsAt ? { resetsAt } : {})
+      ...(resetsAt ? { resetsAt, windowDurationMins: cycleMins } : {})
     })
   }
   return windows.length > 0
