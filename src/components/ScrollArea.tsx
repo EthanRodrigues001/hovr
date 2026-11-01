@@ -17,7 +17,7 @@ export function ScrollArea({ className = '', wrapClass = '', children }: Props) 
   const ref = useRef<HTMLDivElement>(null)
   const [edges, setEdges] = useState({ top: false, bottom: false })
   const [rail, setRail] = useState({ top: 0, height: 0, active: false })
-  const idle = useRef<number>()
+  const idle = useRef<number | undefined>(undefined)
 
   const measure = useCallback(() => {
     const el = ref.current
