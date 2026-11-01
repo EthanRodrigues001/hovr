@@ -15,7 +15,8 @@ import { SegmentBar, type BarSegment } from './SegmentBar'
 import { useStore } from '../../store/appStore'
 import { ProviderRing } from '../ProviderRing'
 import { ProviderLogo } from '../ProviderLogo'
-import { useHeatTip } from './HeatTip'
+import { ProviderPicker } from '../ProviderPicker'
+import { useFloatTip } from './HeatTip'
 
 const DAY = 86_400_000
 const LEFT_COL = 220 // keep in step with --left in analytics.css
@@ -55,75 +56,6 @@ function resetBuckets(lanes: Array<{ resetsAt: number }>, now: number): BarSegme
   ]
 }
 
-/** A checkbox dropdown: pick which providers the timeline shows. Closes on outside click or Escape. */
-function ProviderFilter({
-  items,
-  hidden,
-  onToggle
-}: {
-  items: Array<{ id: ProviderId; name: string }>
-  hidden: ReadonlySet<ProviderId>
-  onToggle: (id: ProviderId) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!open) return
-    const down = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false)
-    }
-    const key = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
-    document.addEventListener('mousedown', down)
-    document.addEventListener('keydown', key)
-    return () => {
-      document.removeEventListener('mousedown', down)
-      document.removeEventListener('keydown', key)
-    }
-  }, [open])
-  const shown = items.length - hidden.size
-  return (
-    <div className="dd" ref={ref}>
-      <button type="button" className="dd-btn" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <span className="dd-stack">
-          {items
-            .filter((it) => !hidden.has(it.id))
-            .slice(0, 4)
-            .map((it) => (
-              <span key={it.id}>
-                <ProviderLogo id={it.id} size={14} />
-              </span>
-            ))}
-        </span>
-        {shown === items.length ? 'All providers' : `${shown} of ${items.length}`}
-        <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
-          <path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-      {open && (
-        <div className="dd-menu" role="menu">
-          <div className="dd-label">Show providers</div>
-          {items.map((it) => {
-            const on = !hidden.has(it.id)
-            return (
-              <button key={it.id} type="button" role="menuitemcheckbox" aria-checked={on} className="dd-item" onClick={() => onToggle(it.id)}>
-                <span className={`dd-check${on ? ' on' : ''}`}>
-                  {on && (
-                    <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
-                      <path d="M2 5.2 4.1 7.2 8 2.8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </span>
-                <ProviderLogo id={it.id} size={16} />
-                {it.name}
-              </button>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
-
 export function TimelineTab() {
   const axisDays = 30
   const backDays = 0
@@ -134,7 +66,7 @@ export function TimelineTab() {
     const t = window.setInterval(() => setNow(Date.now()), 60_000)
     return () => window.clearInterval(t)
   }, [])
-  const tip = useHeatTip()
+  const tip = useFloatTip()
 
   // Mouse wheel over the chart zooms the range (3 to 30 days in view); Shift+wheel or a sideways swipe pans.
   const [view, setView] = useState(7)
@@ -302,7 +234,7 @@ export function TimelineTab() {
           Limit windows <small>Scroll the dates or Ctrl + scroll to zoom · Shift + scroll to pan</small>
         </h3>
         {allGroups.length > 1 && (
-          <ProviderFilter
+          <ProviderPicker
             items={allGroups.map((g) => ({ id: g.provider, name: g.name }))}
             hidden={hidden}
             onToggle={toggleProvider}
@@ -356,7 +288,7 @@ export function TimelineTab() {
               const label = `resets ${weekdayTime(l.resetsAt, now)}`
               return (
                 <div key={l.key} className="tl-row" style={{ '--acc': PROVIDER_META[g.provider].accent } as CSSProperties}>
-                  <div className="tl-left tl-limit">
+                  <div className="tl-left tl-limit" onMouseEnter={(e) => tip.show(e, info)} onMouseLeave={tip.hide}>
                     <ProviderLogo id={g.provider} size={18} />
                     <span className="tl-who">
                       <span className="tl-name" title={`${g.name} ${l.window.label}`}>
@@ -379,17 +311,49 @@ export function TimelineTab() {
                       onMouseLeave={tip.hide}
                       onClick={() => setPinned(pinned === l.key ? null : l.key)}
                     >
-                      <i className="tl-elapsed" style={{ width: `${elapsed * 100}%` }} />
-                      <i className={`tl-fill tl-tone-${tone}`} style={{ width: `${used}%` }} />
+                      <i
+                        className="tl-elapsed"
+                        style={{ width: `${elapsed * 100}%` }}
+                        onMouseEnter={(e) => {
+                          e.stopPropagation()
+                          tip.show(e, <><b>Time gone</b><span>{Math.round(elapsed * 100)}% of this window · {span(Math.max(0, now - l.startsAt))} elapsed</span><span>Started {weekdayTime(l.startsAt, now)}</span></>)
+                        }}
+                      />
+                      <i
+                        className={`tl-fill tl-tone-${tone}`}
+                        style={{ width: `${used}%` }}
+                        onMouseEnter={(e) => {
+                          e.stopPropagation()
+                          tip.show(e, <><b>Used</b><span>{Math.round(used)}% of the limit · {Math.round(100 - used)}% left</span></>)
+                        }}
+                      />
                     </div>
                     {runOut !== null && pct(runOut) < 100 && pct(l.resetsAt) - pct(runOut) > 0.4 && (
-                      <i className="tl-lock" style={{ left: `${pct(runOut)}%`, width: `${pct(l.resetsAt) - pct(runOut)}%` }} />
+                      <i
+                        className="tl-lock"
+                        style={{ left: `${pct(runOut)}%`, width: `${pct(l.resetsAt) - pct(runOut)}%` }}
+                        onMouseEnter={(e) => tip.show(e, <><b>Locked out</b><span>At this pace you run out {weekdayTime(runOut, now)}</span><span>and wait {span(Math.max(0, l.resetsAt - runOut))} for the reset</span></>)}
+                        onMouseLeave={tip.hide}
+                      />
+                    )}
+                    {pct(l.resetsAt) < 100 && (
+                      <i
+                        className="tl-next"
+                        onMouseEnter={(e) => tip.show(e, <><b>Next window</b><span>{weekdayTime(l.resetsAt, now)} → {weekdayTime(l.resetsAt + l.length, now)}</span><span>Starts fresh at 0% used</span></>)}
+                        onMouseLeave={tip.hide}
+                        style={{ left: `${pct(l.resetsAt)}%`, width: `${Math.min(100, pct(l.resetsAt + l.length)) - pct(l.resetsAt)}%` }}
+                      />
                     )}
                     <div className="tl-label" style={{ left: `${nowPct + 0.8}%` }}>
                       {label}
                       {runOut !== null && <span className="tl-warn"> · out {weekdayTime(runOut, now)}</span>}
                     </div>
-                    <i className="tl-now" style={{ left: `${nowPct}%` }} />
+                    <i
+                      className="tl-now"
+                      style={{ left: `${nowPct}%` }}
+                      onMouseEnter={(e) => tip.show(e, <><b>Now</b><span>{weekdayTime(now, now)}</span></>)}
+                      onMouseLeave={tip.hide}
+                    />
                   </div>
                 </div>
               )

@@ -2,10 +2,13 @@
  * General tab: how the notch looks and behaves. Everything applies immediately.
  */
 import { useEffect, useState } from 'react'
-import type { CollapsedStyle, DisplayInfo, PillShow } from '../../../shared/types'
+import type { CollapsedStyle, DisplayInfo } from '../../../shared/types'
+import type { ProviderId } from '../../../shared/usage'
 import { edge } from '../../lib/edge'
 import { useStore } from '../../store/appStore'
 import { Row, Segmented, Switch } from '../ui'
+import { ProviderPicker } from '../ProviderPicker'
+import { PROVIDER_META } from '../../lib/providers'
 
 const INTERVALS = [1, 5, 10, 15, 30] as const
 
@@ -19,6 +22,15 @@ export function GeneralTab() {
   }, [])
 
   const current = displays.find((d) => d.isCurrent)
+  const providers = useStore((s) => s.providers)
+  const pillable = providers.filter((p) => p.enabled && p.installed && p.supportsLimits)
+  const hidden = new Set(settings.pillHidden as ProviderId[])
+  const togglePill = (id: ProviderId) => {
+    const next = new Set(hidden)
+    if (next.has(id)) next.delete(id)
+    else if (pillable.filter((p) => !next.has(p.id)).length > 1) next.add(id) // keep at least one on
+    void patch({ pillHidden: [...next] })
+  }
 
   return (
     <div className="tab-body">
@@ -41,16 +53,16 @@ export function GeneralTab() {
         />
       </Row>
 
-      <Row title="Collapsed notch shows" hint="Every connected tool, or just the one closest to its limit.">
-        <Segmented<PillShow>
-          value={settings.pillShow}
-          onChange={(pillShow) => void patch({ pillShow })}
-          options={[
-            { value: 'all', label: 'All tools' },
-            { value: 'tightest', label: 'Tightest' }
-          ]}
-        />
-      </Row>
+      {pillable.length > 1 && (
+        <Row title="Tools in the notch" hint="Pick which tools the collapsed notch shows, one or all. At least one stays on.">
+          <ProviderPicker
+            items={pillable.map((p) => ({ id: p.id, name: PROVIDER_META[p.id].short }))}
+            hidden={hidden}
+            onToggle={togglePill}
+            allLabel="All tools"
+          />
+        </Row>
+      )}
 
       <Row title="Ignore hover in fullscreen" hint="Never pop up over games or fullscreen video.">
         <Switch

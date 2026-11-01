@@ -3,7 +3,7 @@
  * Unknown keys are dropped; every field falls back to `base` when missing or the
  * wrong type; numbers are clamped.
  */
-import type { CollapsedStyle, PillShow, Settings } from './types'
+import type { CollapsedStyle, Settings } from './types'
 
 const COLLAPSED_STYLES: readonly CollapsedStyle[] = ['chips', 'compact']
 
@@ -39,8 +39,8 @@ export function sanitize(base: Settings, input: Partial<Record<keyof Settings, u
         ? undefined
         : pick('stickDisplayScaleFactor', num),
     disabledProviders: pick('disabledProviders', (v) => Array.isArray(v) && v.every((x) => typeof x === 'string')),
+    pillHidden: pick('pillHidden', (v) => Array.isArray(v) && v.every((x) => typeof x === 'string')),
     notifications: pick('notifications', bool),
-    pillShow: pick('pillShow', (v) => v === 'all' || v === 'tightest') as PillShow,
     showCostEstimates: pick('showCostEstimates', bool),
     usageRefreshMinutes: Math.min(60, Math.max(1, Math.round(pick('usageRefreshMinutes', num)))),
     lastSeenChangelogVersion: pick('lastSeenChangelogVersion', (v) => typeof v === 'string')

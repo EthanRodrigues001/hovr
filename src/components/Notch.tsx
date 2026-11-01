@@ -23,7 +23,7 @@ import { AnalyticsView } from './analytics/AnalyticsView'
 import { ToastStack } from './Toast'
 import { UsageView } from './UsageView'
 
-const FLARE = 14
+const FLARE = 8
 const HEADER_H = 46
 const FOOTER_H = 38
 const MAX_CHIPS = 4
@@ -37,11 +37,12 @@ interface Chip {
 function useChips(): Chip[] {
   const providers = useStore((s) => s.providers)
   const usage = useStore((s) => s.usage)
-  const pillShow = useStore((s) => s.settings.pillShow)
+  const pillHidden = useStore((s) => s.settings.pillHidden)
   return useMemo(() => {
     const chips: Chip[] = []
     for (const status of providers) {
       if (!status.enabled || !status.installed || !status.supportsLimits) continue
+      if (pillHidden.includes(status.id)) continue
       const windows = usage[status.id]?.windows ?? []
       if (windows.length > 0) chips.push({ status, remaining: primaryRemainingPercent(windows) })
       // Signed in but failing: show a "?" so a silent outage is visible.
@@ -50,12 +51,8 @@ function useChips(): Chip[] {
         chips.push({ status, remaining: null })
       }
     }
-    if (pillShow === 'tightest' && chips.length > 1) {
-      const known = chips.filter((c) => c.remaining !== null)
-      if (known.length > 0) return [known.reduce((a, b) => ((b.remaining as number) < (a.remaining as number) ? b : a))]
-    }
     return chips
-  }, [providers, usage, pillShow])
+  }, [providers, usage, pillHidden])
 }
 
 function CollapsedPill({ chips, style }: { chips: Chip[]; style: 'chips' | 'compact' }) {

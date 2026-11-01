@@ -2165,3 +2165,39 @@
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
+
+/* next window: dashed outline right after the current one */
+.tl-next {
+  position: absolute;
+  top: 10px;
+  height: 8px;
+  box-sizing: border-box;
+  border: 1px dashed color-mix(in srgb, var(--acc, #fff) 55%, transparent);
+  border-left: 0;
+  border-radius: 0 2px 2px 0;
+  background: transparent;
+  pointer-events: none;
+}
+
+/* tooltips on every part: those pieces must receive the pointer */
+.tl-lock,
+.tl-next,
+.tl-elapsed,
+.tl-fill {
+  pointer-events: auto;
+}
+.tl-now {
+  pointer-events: auto;
+  width: 3px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 0 0 2px #000;
+  cursor: default;
+}
+
+.heat-tip.float {
+  position: fixed;
+  transform: none;
+  z-index: 1000;
+}

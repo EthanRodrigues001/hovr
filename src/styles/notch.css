@@ -325,13 +325,46 @@
   transition: width 500ms var(--ease-out);
 }
 .bar-tick {
+  --r: 4px;
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 2px;
-  margin-left: -1px;
-  background: rgba(255, 255, 255, 0.85);
+  width: 7px;
+  margin-left: -3.5px;
+  background: #000;
   pointer-events: none;
+}
+.bar-tick i {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 2px;
+  right: 2px;
+  border-radius: 2px;
+  background: #fff;
+}
+/* the dark gap widens outward where it meets the bar's top and bottom edges */
+.bar-tick::before,
+.bar-tick::after {
+  content: '';
+  position: absolute;
+  left: calc(var(--r) * -1);
+  right: calc(var(--r) * -1);
+  height: var(--r);
+}
+.bar-tick::before {
+  top: 0;
+  background:
+    radial-gradient(circle at 0 100%, transparent calc(var(--r) - 0.5px), #000 var(--r)) left top / var(--r) var(--r) no-repeat,
+    radial-gradient(circle at 100% 100%, transparent calc(var(--r) - 0.5px), #000 var(--r)) right top / var(--r) var(--r) no-repeat,
+    linear-gradient(#000, #000) center / calc(100% - 2 * var(--r)) 100% no-repeat;
+}
+.bar-tick::after {
+  bottom: 0;
+  background:
+    radial-gradient(circle at 0 0, transparent calc(var(--r) - 0.5px), #000 var(--r)) left bottom / var(--r) var(--r) no-repeat,
+    radial-gradient(circle at 100% 0, transparent calc(var(--r) - 0.5px), #000 var(--r)) right bottom / var(--r) var(--r) no-repeat,
+    linear-gradient(#000, #000) center / calc(100% - 2 * var(--r)) 100% no-repeat;
 }
 .bar-chip {
   position: absolute;
@@ -969,4 +1002,32 @@ kbd {
 .upd-ver {
   font-size: 15px;
   font-weight: 600;
+}
+
+.bar-tick,
+.bar-chip,
+.bar-fill {
+  pointer-events: auto;
+}
+.bar-tick {
+  pointer-events: auto;
+}
+.heat-tip.float {
+  position: fixed;
+  z-index: 1000;
+  max-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: rgba(24, 24, 28, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+  color: #fff;
+  white-space: normal;
+  pointer-events: none;
+}
+.heat-tip.float span {
+  color: rgba(255, 255, 255, 0.6);
 }
