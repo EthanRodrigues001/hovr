@@ -6,7 +6,7 @@
  * auto-dismisses on a timer (see appStore.pushToast) and can also be swiped
  * away by clicking it.
  */
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'motion/react'
 import { useStore } from '../store/appStore'
 
 export function ToastStack() {

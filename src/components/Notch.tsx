@@ -6,7 +6,7 @@
  * element is painted. Size is animated with a spring; content layers crossfade.
  * The inverse-corner "flares" at the top blend the notch into the screen edge.
  */
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'motion/react'
 import { BarChart3, ChevronRight, Download, RefreshCw, Settings as Cog, X } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { NOTCH } from '../../shared/notch'
