@@ -23,6 +23,7 @@ export function sanitize(base: Settings, input: Partial<Record<keyof Settings, u
   const out: Settings = {
     launchAtLogin: pick('launchAtLogin', bool),
     reduceMotion: pick('reduceMotion', bool),
+    smoothAnimation: pick('smoothAnimation', bool),
     suppressInFullscreen: pick('suppressInFullscreen', bool),
     // The old "dots" style became "compact".
     collapsedStyle:

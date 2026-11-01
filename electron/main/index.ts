@@ -20,10 +20,20 @@ import { initAutoUpdater } from './updater'
 import { startFullscreenMonitor, stopFullscreenMonitor, triggerFullscreenCheck } from './fullscreen'
 import { prewarmHistory } from './history/historyService'
 import { startUsageService, stopUsageService } from './usageService'
+import { loadSettings as readStoredSettings } from '../store/settings'
+
+function readSmoothAnimation(): boolean {
+  try {
+    return readStoredSettings().smoothAnimation
+  } catch {
+    return false
+  }
+}
 
 // The notch is small and mostly static. Chromium's GPU process costs more memory
-// than it saves here, so use software compositing. Must run before 'ready'.
-app.disableHardwareAcceleration()
+// than it saves here, so use software compositing unless "Smoother animation" is on (large screens,
+// screen recording). Must run before 'ready'.
+if (!readSmoothAnimation()) app.disableHardwareAcceleration()
 
 // Restrict the renderer to a single webContents and forbid remote module usage.
 app.enableSandbox()

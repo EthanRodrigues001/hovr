@@ -76,6 +76,10 @@ export function GeneralTab() {
         <Switch checked={settings.reduceMotion} onChange={(reduceMotion) => void patch({ reduceMotion })} label="Reduce motion" />
       </Row>
 
+      <Row title="Smoother animation" hint="Draws with the graphics card. Helps on large screens and while screen recording. Uses a little more memory. Takes effect after you restart HOVR.">
+        <Switch checked={settings.smoothAnimation} onChange={(smoothAnimation) => void patch({ smoothAnimation })} label="Smoother animation" />
+      </Row>
+
       <h3 className="sgroup">Usage data</h3>
       <Row title="Alerts" hint="A notification when a limit is nearly used up or will run out before it resets.">
         <button className="btn btn-ghost" onClick={() => void edge.testAlert()}>

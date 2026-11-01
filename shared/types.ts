@@ -21,6 +21,8 @@ export interface Settings {
   launchAtLogin: boolean
   /** Reduce motion for the notch animations. */
   reduceMotion: boolean
+  /** Draw with the GPU. Smoother on big or high-DPI screens and while recording; costs a little memory. Needs a restart. */
+  smoothAnimation: boolean
   /** Collapsed pill: per-provider remaining % ("chips") or just status dots ("dots"). */
   collapsedStyle: CollapsedStyle
   /**
@@ -57,6 +59,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   launchAtLogin: true,
   reduceMotion: false,
+  smoothAnimation: false,
   collapsedStyle: 'chips',
   suppressInFullscreen: true,
   stickDisplayId: undefined,
