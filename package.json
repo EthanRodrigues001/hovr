@@ -1,6 +1,6 @@
 {
   "name": "hovr",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "hovr: a notch at the top of your screen showing the usage limits of your AI coding tools.",
   "author": "Ethan Rodrigues",
   "license": "Apache-2.0",

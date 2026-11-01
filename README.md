@@ -25,7 +25,7 @@ HOVR sits at the top-centre of your screen as a small pill. Hover it, press **Al
 
 HOVR is for **Windows** (x64). It is tested on Windows 11.
 
-1. Download **`HOVR-Setup-1.0.3.exe`** from the [latest release](https://github.com/EthanRodrigues001/hovr/releases/latest).
+1. Download **`HOVR-Setup-1.0.4.exe`** from the [latest release](https://github.com/EthanRodrigues001/hovr/releases/latest).
 2. Run it and press **Install**. It installs for your account only and needs no admin rights. HOVR opens as soon as it finishes.
 
 Running the setup again on a PC that already has HOVR offers **Reinstall** or **Uninstall**. Your settings are kept when you uninstall.
