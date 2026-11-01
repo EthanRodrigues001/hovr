@@ -14,12 +14,10 @@ FIXES_CHECKLIST.md
 docs/
 dev-app-update.yml
 
-# Third-party source cloned for reading only — never built, never shipped.
-# Ignored deliberately: reference/ holds GPL-2.0 code (Tockler), and committing it
-# into this Apache-2.0 repo would mean redistributing GPL under the wrong terms.
-# The index is tracked; the clones are not.
-reference/*
-!reference/INDEX.md
+# Personal notes and reference material: local only, never pushed.
+context/
+scratch/
+reference/
 
 .claude/
 
