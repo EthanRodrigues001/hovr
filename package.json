@@ -77,9 +77,9 @@
     "electron": "^45.2.1",
     "electron-builder": "^26.18.0",
     "electron-vite": "^6.0.0",
-    "typescript": "^5.4.3",
+    "typescript": "^7.0.2",
     "vite": "^8.3.5",
-    "vitest": "^4.1.12"
+    "vitest": "^5.0.5"
   },
   "dependencies": {
     "@iconify-json/cuida": "^1.2.5",
