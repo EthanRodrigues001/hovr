@@ -26,3 +26,6 @@ dist-setup/
 
 .agents/
 skills-lock.json
+
+.claude/skills/
+skills-lock.json

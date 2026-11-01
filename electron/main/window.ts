@@ -243,8 +243,8 @@ export function createWindow(): BrowserWindow {
     mainWindow.setAlwaysOnTop(true, 'screen-saver')
   })
 
-  mainWindow.webContents.on('console-message', (_event, _level, message, line, sourceId) => {
-    console.log(`[Renderer] ${message} (${sourceId}:${line})`)
+  mainWindow.webContents.on('console-message', (event) => {
+    console.log(`[Renderer] ${event.message} (${event.sourceId}:${event.lineNumber})`)
   })
 
   mainWindow.on('close', (e) => {
