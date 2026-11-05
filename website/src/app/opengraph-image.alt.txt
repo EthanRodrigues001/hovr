@@ -1,1 +1,1 @@
-HOVR: usage limits for Claude Code, Codex and Cursor in a notch at the top of your Windows screen
+HOVR: a Dynamic Island for your AI limits. A notch showing 27%, 48% and 100% left on Claude Code, Codex and Antigravity.

@@ -28,7 +28,7 @@ export default async function Home() {
     '@type': 'SoftwareApplication',
     name: 'HOVR',
     url: SITE_URL,
-    description: 'Shows how much of your Claude Code, Codex, Cursor and other AI tool usage limits you have left, in a notch at the top of your Windows screen.',
+    description: 'A live Dynamic Island for Windows that shows how much of your Claude Code, Codex, Cursor and other AI tool usage limits you have left.',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Windows',
     softwareVersion: release.version,
@@ -63,10 +63,10 @@ export default async function Home() {
               <ArrowUpRight size={12} className="text-white/40 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white" />
             </a>
             <h1 className="mx-auto max-w-[820px] text-balance text-4xl font-semibold leading-[1.05] tracking-tight md:text-7xl">
-              Know what&apos;s left before your AI tools run dry.
+              A Dynamic Island for your AI limits.
             </h1>
             <p className="mx-auto mt-6 max-w-[620px] text-pretty text-lg leading-relaxed text-white/58">
-              HOVR puts the usage limits of Claude Code, Codex, Cursor and more in a small notch at the top of your screen. Hover it to see every limit, when it resets, and which will run out first.
+              Windows never got one, so we built it. A live little notch on your screen shows what&apos;s left on Claude Code, Codex, Cursor and more. Hover to see when each limit resets and which one runs dry first.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <a
@@ -94,12 +94,12 @@ export default async function Home() {
         </section>
 
         {/* features */}
-        <Section id="features" eyebrow="Features" title="Everything your tools hide behind a different screen, in one hover.">
+        <Section id="features" eyebrow="Features" title="One hover. Every limit your tools hide.">
           <Features />
         </Section>
 
         {/* tools */}
-        <Section id="tools" eyebrow="Supported tools" title="Reads the limits your tools actually enforce.">
+        <Section id="tools" eyebrow="Supported tools" title="Plugs into the tools you already use.">
           <Reveal>
             <ToolGrid />
             <p className="mt-5 max-w-[640px] text-[14px] leading-relaxed text-white/45">
@@ -173,7 +173,7 @@ export default async function Home() {
         {/* final cta */}
         <section className="px-5 pb-24 text-center">
           <Reveal>
-            <h2 className="mx-auto max-w-[640px] text-balance text-3xl font-semibold tracking-tight md:text-5xl">Stop finding out you are out when a request fails.</h2>
+            <h2 className="mx-auto max-w-[640px] text-balance text-3xl font-semibold tracking-tight md:text-5xl">Know before the request fails.</h2>
             <a
               href={release.url}
               className="mt-8 inline-flex h-12 items-center gap-2.5 rounded-full bg-white px-7 text-[15px] font-semibold text-black transition-transform hover:scale-[1.03] active:scale-95"
