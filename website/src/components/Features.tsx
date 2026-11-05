@@ -1,67 +1,41 @@
 'use client'
 
 import { AnimatePresence, motion } from 'motion/react'
-import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { useEffect, useRef, useState } from 'react'
+
+const Scaled = dynamic(() => import('./FeatureViews').then((m) => m.Scaled), { ssr: false })
 
 const AUTO_MS = 6500
 
 const ITEMS = [
   {
     title: 'Pace, not just a number',
-    text: 'A white marker on each bar shows where an even spend would be right now, so you see you are burning too fast while there is still time to slow down.',
-    src: '/ui/f-pace.webp',
-    w: 964,
-    h: 640,
-    alt: 'HOVR usage card: Claude Session 27% left with a pace marker and a warning that it runs out in 44 minutes, Weekly 70% left, Codex Monthly 48% left'
+    text: 'A white marker on each bar shows where an even spend would be right now, so you see you are burning too fast while there is still time to slow down.'
   },
   {
     title: 'Finds your tools by itself',
-    text: 'It reads the sign-in files your tools already keep. No account, key or config to enter, and those files are never changed.',
-    src: '/ui/f-tools.webp',
-    w: 1020,
-    h: 680,
-    alt: 'HOVR Providers settings listing Claude Code, Codex and Antigravity as connected'
+    text: 'It reads the sign-in files your tools already keep. No account, key or config to enter, and those files are never changed.'
   },
   {
     title: 'A pill that stays out of the way',
-    text: 'Collapsed, it shows what is left on each tool as a small ring, and it hides over fullscreen apps.',
-    src: '/ui/f-pill.webp',
-    w: 960,
-    h: 640,
-    alt: 'The collapsed HOVR notch showing 27% for Claude, 48% for Codex and 100% for Antigravity'
+    text: 'Collapsed, it shows what is left on each tool as a small ring, and it hides over fullscreen apps.'
   },
   {
     title: 'Forecast',
-    text: 'Which limits will run out before they reset, when, and how long they stay locked.',
-    src: '/ui/f-forecast.webp',
-    w: 1560,
-    h: 960,
-    alt: 'HOVR Forecast: two limits run out before reset, Claude Session runs out Saturday 15:57'
+    text: 'Which limits will run out before they reset, when, and how long they stay locked.'
   },
   {
     title: 'Spend',
-    text: "Tokens and estimated API cost per day and per model, read from your tools' local session logs.",
-    src: '/ui/f-spend.webp',
-    w: 1560,
-    h: 950,
-    alt: 'HOVR Spend: $580.48 estimated over 30 days with a daily cost chart for Claude, Antigravity and Codex'
+    text: "Tokens and estimated API cost per day and per model, read from your tools' local session logs."
   },
   {
     title: 'Timeline',
-    text: 'Every limit window on one calendar: the one that ended, the current one, and the next as a dashed bar.',
-    src: '/ui/f-timeline.webp',
-    w: 1560,
-    h: 950,
-    alt: 'HOVR Timeline: Claude, Codex and Antigravity limit windows on a two-week calendar'
+    text: 'Every limit window on one calendar: the one that ended, the current one, and the next as a dashed bar.'
   },
   {
     title: 'Alerts',
     text: 'A Windows notification when a limit is nearly used up or will run out early. Each one shows once per window.',
-    src: '/ui/f-alerts.webp',
-    w: 960,
-    h: 640,
-    alt: 'Two HOVR notifications: Claude Code session 27% left, and Codex monthly will run out early'
   }
 ] as const
 
@@ -133,15 +107,7 @@ export function Features() {
             transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0"
           >
-            <Image
-              src={ITEMS[active].src}
-              width={ITEMS[active].w}
-              height={ITEMS[active].h}
-              alt={ITEMS[active].alt}
-              sizes="(min-width: 1080px) 640px, 100vw"
-              priority={active === 0}
-              className="size-full object-cover object-top"
-            />
+            <Scaled index={active} />
           </motion.div>
         </AnimatePresence>
         <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(360px_circle_at_var(--mx)_var(--my),rgba(255,255,255,0.06),transparent_70%)]" />
