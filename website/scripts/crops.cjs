@@ -1,15 +1,20 @@
-// Crops real HOVR analytics screenshots into the feature cards. node scripts/crops.cjs
+// Crops real HOVR screenshots (public/shots) into the feature images (public/ui). node scripts/crops.cjs
+// pill.png and alerts.png come from the /og/pill and /og/alerts routes (headless screenshot, 960x640).
 const sharp = require('sharp')
-const src = (n) => `public/shots/${n}.png`
 const jobs = [
-  ['forecast', 'rings', { left: 1096, top: 96, width: 500, height: 470 }],
-  ['forecast', 'forecast-list', { left: 40, top: 100, width: 1030, height: 400 }],
-  ['spend', 'spend', { left: 560, top: 100, width: 1032, height: 470 }],
-  ['timeline', 'timeline', { left: 32, top: 90, width: 1560, height: 600 }]
+  ['usage', 'pace', { left: 0, top: 60, width: 964, height: 640 }],
+  ['settings', 'tools', { left: 302, top: 4, width: 1020, height: 680 }],
+  ['pill', 'pill', null],
+  ['forecast', 'forecast', { left: 32, top: 88, width: 1560, height: 960 }],
+  ['spend', 'spend', { left: 32, top: 88, width: 1560, height: 950 }],
+  ['timeline', 'timeline', { left: 32, top: 88, width: 1560, height: 950 }],
+  ['alerts', 'alerts', null]
 ]
 ;(async () => {
   for (const [file, out, region] of jobs) {
-    await sharp(src(file)).extract(region).webp({ quality: 88 }).toFile(`public/ui/${out}.webp`)
+    let img = sharp(`public/shots/${file}.png`)
+    if (region) img = img.extract(region)
+    await img.webp({ quality: 88 }).toFile(`public/ui/f-${out}.webp`)
     console.log(out)
   }
 })()
