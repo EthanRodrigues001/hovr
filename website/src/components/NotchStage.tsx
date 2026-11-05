@@ -23,25 +23,6 @@ const PHASES: Phase[] = [
   { label: 'Timeline', note: 'Every limit window on one calendar.', ms: 5200, apply: () => useStore.setState({ open: true, view: 'analytics', analyticsTab: 'timeline' }) }
 ]
 
-/** A dimmed editor window so the closed notch sits on something that looks like a desktop. */
-function FauxWindow() {
-  const lines = [62, 38, 80, 54, 71, 30, 66, 45, 58, 24, 77, 41]
-  return (
-    <div aria-hidden className="absolute left-[7%] top-[12%] h-[70%] w-[62%] overflow-hidden rounded-2xl border border-white/6 bg-[#0d0d0f]/80">
-      <div className="flex h-9 items-center gap-1.5 border-b border-white/6 px-4">
-        <i className="size-2.5 rounded-full bg-white/10" />
-        <i className="size-2.5 rounded-full bg-white/10" />
-        <i className="size-2.5 rounded-full bg-white/10" />
-      </div>
-      <div className="space-y-3 p-6">
-        {lines.map((w, i) => (
-          <div key={i} className="h-2 rounded-full bg-white/[0.045]" style={{ width: `${w}%`, marginLeft: i % 3 === 1 ? 24 : 0 }} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
 /**
  * The real HOVR notch on sample data, inside a mock desktop. It plays through five phases on its own
  * (pill, usage, forecast, spend, timeline); click a phase to jump to it, or hover the pill to use it like the app.
@@ -121,18 +102,9 @@ export function NotchStage() {
       <div
         ref={wrap}
         onPointerMove={onMove}
-        className="relative overflow-hidden rounded-[28px] border border-white/12 bg-[#0a0a0b] shadow-[0_50px_140px_-50px_rgba(255,255,255,0.14)]"
+        className="relative overflow-hidden rounded-[28px] border border-white/12 bg-[#0a0a0b]"
         style={{ height: H * scale }}
       >
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(ellipse 70% 55% at 50% 115%, rgba(150,150,175,0.28), transparent 70%), radial-gradient(ellipse 45% 40% at 12% 95%, rgba(217,119,87,0.14), transparent 70%), radial-gradient(ellipse 45% 40% at 88% 90%, rgba(162,89,255,0.14), transparent 70%), #0a0a0b'
-          }}
-        />
-        <FauxWindow />
         <div className="hovr-stage absolute left-0 top-0 origin-top-left" style={{ width: W, height: H, transform: `scale(${scale})` }} ref={canvas}>
           <Notch />
         </div>

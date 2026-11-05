@@ -60,7 +60,7 @@ export function OgCard() {
       />
 
       {/* the notch, collapsed */}
-      <div className="absolute left-1/2 top-0 flex h-[52px] -translate-x-1/2 items-center gap-4 rounded-b-[26px] border border-t-0 border-white/20 bg-black px-7 shadow-[0_0_60px_rgba(255,255,255,0.14)]">
+      <div className="absolute left-1/2 top-0 flex h-[52px] -translate-x-1/2 items-center gap-4 rounded-b-[26px] bg-black px-7 shadow-[0_0_60px_rgba(255,255,255,0.14)]">
         <Flare side="l" />
         <Flare side="r" />
         <span className="flex items-center gap-2 text-[17px] font-semibold tracking-wide">

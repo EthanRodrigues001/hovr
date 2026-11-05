@@ -49,9 +49,9 @@ export default async function Home() {
           <Reveal>
             <a
               href={release.page}
-              className="group mx-auto mb-7 inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-black py-1.5 pl-1.5 pr-3.5 text-[13px] text-white/75 shadow-[0_0_30px_rgba(255,255,255,0.08)] transition-colors hover:border-white/30 hover:text-white"
+              className="group mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.03] py-[3px] pl-[3px] pr-2.5 text-[12px] text-white/65 transition-colors hover:border-white/30 hover:text-white"
             >
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 font-semibold text-white">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-2 py-0.5 text-[11.5px] font-semibold text-white">
                 <span className="relative flex size-1.5">
                   <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#4ade80] opacity-70" />
                   <span className="relative inline-flex size-1.5 rounded-full bg-[#4ade80]" />
@@ -59,7 +59,7 @@ export default async function Home() {
                 v{release.version}
               </span>
               Free for Windows
-              <ArrowUpRight size={14} className="text-white/40 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white" />
+              <ArrowUpRight size={12} className="text-white/40 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white" />
             </a>
             <h1 className="mx-auto max-w-[820px] text-balance text-4xl font-semibold leading-[1.05] tracking-tight md:text-7xl">
               Know what&apos;s left before your AI tools run dry.

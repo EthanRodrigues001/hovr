@@ -143,3 +143,8 @@
     transform: scaleX(1);
   }
 }
+
+/* Tailwind has a .ring utility; the app uses .ring for its SVG gauges. Keep the gauges plain. */
+svg.ring {
+  box-shadow: none;
+}
