@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'motion/react'
-import { Download } from 'lucide-react'
+import { WindowsIcon } from '@/components/WindowsIcon'
 import { Logo } from '@/hovr/src/components/Logo'
 
 const FLARE = 10
@@ -63,7 +63,7 @@ export function NotchNav({ downloadUrl }: { downloadUrl: string }) {
           href={downloadUrl}
           className="ml-1 inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3.5 text-[13px] font-semibold text-black transition-transform hover:scale-[1.03] active:scale-95"
         >
-          <Download size={14} strokeWidth={2.4} />
+          <WindowsIcon size={14} />
           Download
         </a>
       </motion.nav>

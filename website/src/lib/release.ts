@@ -8,10 +8,10 @@ export interface Release {
   sizeMb: number | null
 }
 
-/** Latest GitHub release, cached for an hour; falls back to a known version if the API is unreachable. */
+/** Latest GitHub release, refreshed at most every 10 minutes; if the API is unreachable the button opens the latest release page. */
 export async function getRelease(): Promise<Release> {
   try {
-    const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { next: { revalidate: 3600 } })
+    const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { next: { revalidate: 600 }, headers: { Accept: 'application/vnd.github+json', ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}) } })
     if (res.ok) {
       const data = (await res.json()) as { tag_name: string; assets: { name: string; size: number; browser_download_url: string }[] }
       const asset = data.assets.find((a) => /^HOVR-Setup-.*\.exe$/.test(a.name))
@@ -28,7 +28,7 @@ export async function getRelease(): Promise<Release> {
   }
   return {
     version: FALLBACK,
-    url: `https://github.com/${REPO}/releases/latest/download/HOVR-Setup-${FALLBACK}.exe`,
+    url: `https://github.com/${REPO}/releases/latest`,
     page: `https://github.com/${REPO}/releases/latest`,
     sizeMb: null
   }

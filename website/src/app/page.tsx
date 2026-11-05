@@ -1,8 +1,9 @@
-import { ArrowUpRight, Download } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import { NotchNav } from '@/components/NotchNav'
 import { Features } from '@/components/Features'
 import { ToolGrid } from '@/components/Mocks'
 import { Reveal } from '@/components/Reveal'
+import { WindowsIcon } from '@/components/WindowsIcon'
 import { NotchStage } from '@/components/Stage'
 import { getRelease } from '@/lib/release'
 import { REPO, SITE_URL } from '@/lib/site'
@@ -72,7 +73,7 @@ export default async function Home() {
                 href={release.url}
                 className="inline-flex h-12 items-center gap-2.5 rounded-full bg-white px-7 text-[15px] font-semibold text-black transition-transform hover:scale-[1.03] active:scale-95"
               >
-                <Download size={18} strokeWidth={2.4} />
+                <WindowsIcon size={18} />
                 Download for Windows
               </a>
               <a href={REPO} className="group inline-flex h-12 items-center gap-2 px-3 text-[15px] font-medium text-white/65 transition-colors hover:text-white">
@@ -128,7 +129,7 @@ export default async function Home() {
                   href={release.url}
                   className="mt-7 inline-flex h-11 items-center gap-2 rounded-full bg-white px-6 text-[14px] font-semibold text-black transition-transform hover:scale-[1.03] active:scale-95"
                 >
-                  <Download size={16} strokeWidth={2.4} />
+                  <WindowsIcon size={16} />
                   Download for Windows
                 </a>
                 <p className="mt-4 text-[13px] text-white/40">
@@ -177,7 +178,7 @@ export default async function Home() {
               href={release.url}
               className="mt-8 inline-flex h-12 items-center gap-2.5 rounded-full bg-white px-7 text-[15px] font-semibold text-black transition-transform hover:scale-[1.03] active:scale-95"
             >
-              <Download size={18} strokeWidth={2.4} />
+              <WindowsIcon size={18} />
               Download HOVR {release.version}
             </a>
           </Reveal>
