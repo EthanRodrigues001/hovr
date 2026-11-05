@@ -4,7 +4,7 @@ import './globals.css'
 
 const inter = Inter({ variable: '--font-inter', subsets: ['latin'] })
 
-const SITE = 'https://hovr-app.vercel.app'
+const SITE = 'https://hovr-ten.vercel.app'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
