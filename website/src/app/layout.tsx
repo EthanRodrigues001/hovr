@@ -7,7 +7,7 @@ const inter = Inter({ variable: '--font-inter', subsets: ['latin'], display: 'sw
 
 const TITLE = 'HOVR: a Dynamic Island for your AI limits'
 const DESCRIPTION =
-  'HOVR is a free Dynamic Island for Windows. A live notch at the top of your screen shows what is left on Claude Code, Codex, Cursor, Antigravity and Grok, when each limit resets, and which runs out first.'
+  'HOVR is a free, open source Dynamic Island for Windows. A live notch at the top of your screen shows what is left on Claude Code, Codex, Cursor, Antigravity and Grok, when each limit resets, and which runs out first.'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

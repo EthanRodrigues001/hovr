@@ -12,7 +12,8 @@ import { REPO, SITE_URL } from '@/lib/site'
 
 function Section({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="mx-auto w-full max-w-[1080px] scroll-mt-24 px-5 py-12 md:py-16">
+    <section id={id} className="relative mx-auto w-full max-w-[1080px] scroll-mt-24 px-5 py-12 md:py-16">
+      <ContourBg className="-z-10 opacity-[0.1]" lines={9} scale={1.4} fade="radial" />
       <Reveal>
         <p className="mb-3 text-xs font-medium uppercase tracking-[0.16em] text-white/45">{eyebrow}</p>
         <h2 className="max-w-[640px] text-balance text-[clamp(1.75rem,3.4vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.03em]">{title}</h2>
@@ -60,14 +61,14 @@ export default async function Home() {
                 </span>
                 v{release.version}
               </span>
-              Free for Windows
+              Free &amp; open source
               <ArrowUpRight size={12} className="text-white/40 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white" />
             </a>
             <h1 className="mx-auto max-w-[760px] text-balance text-[clamp(2.25rem,5.6vw,4rem)] font-semibold leading-[1.06] tracking-[-0.035em]">
               A Dynamic Island for your AI limits.
             </h1>
-            <p className="mx-auto mt-5 max-w-[560px] text-pretty text-[clamp(1rem,1.5vw,1.125rem)] leading-[1.6] text-white/60">
-              Windows never got one, so we built it. A live little notch on your screen shows what&apos;s left on Claude Code, Codex, Cursor and more. Hover to see when each limit resets and which one runs dry first.
+            <p className="mx-auto mt-5 max-w-[460px] text-pretty text-[clamp(1rem,1.5vw,1.125rem)] leading-[1.6] text-white/60">
+              Windows never got one, so we built it. A live notch for Claude Code, Codex, Cursor and more.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <a
@@ -84,7 +85,7 @@ export default async function Home() {
               </a>
             </div>
             <p className="mt-4 text-[13px] text-white/38">
-              Windows x64 · installs for your account, no admin rights{release.sizeMb ? ` · ${release.sizeMb} MB` : ''}
+              Open source · Windows x64 · no admin rights{release.sizeMb ? ` · ${release.sizeMb} MB` : ''}
             </p>
           </Reveal>
         </section>
@@ -113,7 +114,8 @@ export default async function Home() {
         <Section id="install" eyebrow="Install" title="Two steps, no admin rights.">
           <div className="grid gap-4 md:grid-cols-2">
             <Reveal>
-              <div className="h-full rounded-[26px] border border-white/8 bg-white/[0.025] p-6">
+              <div className="relative h-full overflow-hidden rounded-[26px] border border-white/8 bg-white/[0.025] p-6">
+                <ContourBg className="opacity-[0.16]" lines={10} scale={1.1} fade="radial" />
                 <ol className="space-y-5 text-[15px] text-white/70">
                   <li className="flex gap-4">
                     <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-white text-[13px] font-semibold text-black">1</span>
@@ -139,7 +141,8 @@ export default async function Home() {
               </div>
             </Reveal>
             <Reveal delay={0.08}>
-              <div className="h-full rounded-[26px] border border-amber-300/20 bg-amber-300/[0.04] p-6">
+              <div className="relative h-full overflow-hidden rounded-[26px] border border-amber-300/20 bg-amber-300/[0.04] p-6">
+                <ContourBg className="opacity-[0.14]" lines={10} scale={1.3} fade="radial" />
                 <p className="text-[13px] font-medium uppercase tracking-[0.14em] text-amber-200/70">Heads up</p>
                 <h3 className="mt-2 text-lg font-semibold">Windows may warn you</h3>
                 <p className="mt-2 text-[15px] leading-relaxed text-white/58">
@@ -174,16 +177,25 @@ export default async function Home() {
         </Section>
 
         {/* final cta */}
-        <section className="px-5 pb-24 text-center">
+        <section className="mx-auto w-full max-w-[1080px] px-5 pb-24">
           <Reveal>
-            <h2 className="mx-auto max-w-[560px] text-balance text-[clamp(1.75rem,3.4vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.03em]">Know before the request fails.</h2>
-            <a
-              href={release.url}
-              className="mt-8 inline-flex h-12 items-center gap-2.5 rounded-full bg-white px-7 text-[15px] font-semibold text-black transition-transform hover:scale-[1.03] active:scale-95"
-            >
-              <WindowsIcon size={18} />
-              Download HOVR {release.version}
-            </a>
+            <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.02] px-6 py-16 text-center md:py-20">
+              <ContourBg className="opacity-[0.45]" lines={16} scale={1.2} fade="radial" />
+              <div className="relative">
+                <h2 className="mx-auto max-w-[560px] text-balance text-[clamp(1.75rem,3.4vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.03em]">Know before the request fails.</h2>
+                <p className="mx-auto mt-3 text-[15px] text-white/55">Free, open source, Apache-2.0.</p>
+                <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                  <a href={release.url} className="inline-flex h-12 items-center gap-2.5 rounded-full bg-white px-7 text-[15px] font-semibold text-black transition-transform hover:scale-[1.03] active:scale-95">
+                    <WindowsIcon size={18} />
+                    Download HOVR {release.version}
+                  </a>
+                  <a href={REPO} className="group inline-flex h-12 items-center gap-2 px-3 text-[15px] font-medium text-white/70 transition-colors hover:text-white">
+                    Read the source
+                    <ArrowUpRight size={14} className="text-white/40 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white" />
+                  </a>
+                </div>
+              </div>
+            </div>
           </Reveal>
         </section>
       </main>
