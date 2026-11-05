@@ -1,0 +1,112 @@
+/**
+ * Browser-side stand-in for the Electron preload bridge. The site renders the real HOVR
+ * components, so this feeds them fixed sample data (same idea as the app's ?mock=1 harness).
+ * Not overwritten by scripts/sync-ui.cjs.
+ */
+import type { EdgeApi } from '../../shared/bridge'
+import { DEFAULT_SETTINGS } from '../../shared/types'
+import type { ProviderStatus, UsageLimits, UsageState } from '../../shared/usage'
+
+declare global {
+  interface Window {
+    edge: EdgeApi
+  }
+}
+
+function sampleState(now = Date.now()): UsageState {
+  const iso = (ms: number) => new Date(now + ms).toISOString()
+  const H = 3_600_000
+  const D = 24 * H
+  const limits = (windows: UsageLimits['windows']): UsageLimits => ({ checkedAt: iso(0), windows })
+  const status = (id: ProviderStatus['id'], label: string, extra: Partial<ProviderStatus> = {}): ProviderStatus => ({
+    id, label, installed: true, authState: 'authenticated', enabled: true, supportsLimits: true, checkedAt: iso(0), ...extra
+  })
+  return {
+    usage: {
+      claude: limits([
+        { id: 'five_hour', kind: 'session', label: 'Session', usedPercent: 73, resetsAt: iso(3 * H), windowDurationMins: 300 },
+        { id: 'seven_day', kind: 'weekly', label: 'Weekly', usedPercent: 30, resetsAt: iso(4.6 * D), windowDurationMins: 10080 }
+      ]),
+      codex: limits([{ id: 'monthly', kind: 'monthly', label: 'Monthly', usedPercent: 52, resetsAt: iso(18.8 * D), windowDurationMins: 31 * 1440 }]),
+      antigravity: limits([
+        { id: '3p-5h', kind: 'session', label: 'Claude & GPT (shared) · 5-hour', usedPercent: 0, resetsAt: iso(4.9 * H), windowDurationMins: 300 },
+        { id: '3p-weekly', kind: 'weekly', label: 'Claude & GPT (shared) · Weekly', usedPercent: 0, resetsAt: iso(6.9 * D), windowDurationMins: 10080 }
+      ])
+    },
+    providers: [
+      status('claude', 'Claude Code', { plan: 'Pro' }),
+      status('codex', 'Codex', { plan: 'Free' }),
+      status('antigravity', 'Antigravity')
+    ]
+  }
+}
+
+const none = () => () => undefined
+const bridge: EdgeApi = {
+  loadState: async () => ({ settings: { ...DEFAULT_SETTINGS }, version: 'demo' }),
+  installUpdate: async () => undefined,
+  getUpdateStatus: async () => ({ phase: 'idle' as const }),
+  checkForUpdates: async () => undefined,
+  quitApp: async () => undefined,
+  updateSettings: async (patch) => ({ ...DEFAULT_SETTINGS, ...patch }),
+  setInteractive: async () => undefined,
+  getDisplays: async () => [],
+  getUsage: async () => sampleState(),
+  refreshUsage: async () => sampleState(),
+  testAlert: async () => true,
+  getHistory: async (days) => {
+    const DAY = 86_400_000
+    const byDay = Array.from({ length: days }, (_, i) => {
+      const d = new Date(Date.now() - (days - 1 - i) * DAY)
+      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      const wave = 0.5 + 0.5 * Math.sin(i / 2.3)
+      const claude = Math.round(40 * wave * (i % 6 === 5 ? 0.1 : 1) * 1e6)
+      const codex = Math.round(3 * wave * 1e6)
+      const agy = i % 4 === 0 ? Math.round(9 * wave * 1e6) : 0
+      return {
+        date,
+        tokens: claude + codex + agy,
+        costUsd: claude / 1e6 * 1.1 + codex / 1e6 * 0.4 + agy / 1e6 * 0.15,
+        byProvider: { claude, codex, antigravity: agy },
+        costByProvider: { claude: claude / 1e6 * 1.1, codex: codex / 1e6 * 0.4, antigravity: agy / 1e6 * 0.15 }
+      }
+    })
+    const tokens = byDay.reduce((a, d) => a + d.tokens, 0)
+    const cost = byDay.reduce((a, d) => a + (d.costUsd ?? 0), 0)
+    const sum = (p: 'claude' | 'codex' | 'antigravity') => byDay.reduce((a, d) => a + (d.byProvider[p] ?? 0), 0)
+    const sumC = (p: 'claude' | 'codex' | 'antigravity') => byDay.reduce((a, d) => a + (d.costByProvider[p] ?? 0), 0)
+    return {
+      generatedAt: new Date().toISOString(),
+      days,
+      totals: { input: tokens * 0.002, output: tokens * 0.004, cacheRead: tokens * 0.9, cacheWrite: tokens * 0.09, requests: Math.round(tokens / 2e5), costUsd: cost },
+      byDay,
+      byModel: [
+        { provider: 'claude' as const, model: 'claude-opus-5', totals: { input: 1, output: 1, cacheRead: sum('claude') * 0.4, cacheWrite: 1, requests: 100 }, costUsd: sumC('claude') * 0.55 },
+        { provider: 'claude' as const, model: 'claude-sonnet-5-5', totals: { input: 1, output: 1, cacheRead: sum('claude') * 0.6, cacheWrite: 1, requests: 200 }, costUsd: sumC('claude') * 0.45 },
+        { provider: 'antigravity' as const, model: 'gemini-3-flash', totals: { input: 1, output: 1, cacheRead: sum('antigravity'), cacheWrite: 1, requests: 50 }, costUsd: sumC('antigravity') },
+        { provider: 'codex' as const, model: 'gpt-5', totals: { input: 1, output: 1, cacheRead: sum('codex'), cacheWrite: 1, requests: 20 }, costUsd: sumC('codex') }
+      ],
+      byProvider: [
+        { provider: 'claude' as const, requests: 900, tokens: sum('claude'), costUsd: sumC('claude') },
+        { provider: 'antigravity' as const, requests: 300, tokens: sum('antigravity'), costUsd: sumC('antigravity') },
+        { provider: 'codex' as const, requests: 50, tokens: sum('codex'), costUsd: sumC('codex') }
+      ],
+      costByType: { input: cost * 0.001, cacheRead: cost * 0.55, cacheWrite: cost * 0.25, output: cost * 0.2 },
+      cacheSavingsUsd: cost * 8,
+      heatmap: Array.from({ length: 7 }, () => new Array<number>(24).fill(0)),
+      pricesAsOf: new Date().toISOString(),
+      providersScanned: ['claude', 'codex', 'antigravity'] as Array<'claude' | 'codex' | 'antigravity'>
+    }
+  },
+  getSamples: async () => [],
+  onUsage: none,
+  onSettings: none,
+  onToggle: none,
+  onOpenSettings: none,
+  onCursor: none,
+  onToast: none,
+  onUpdateStatus: none
+}
+
+if (typeof window !== 'undefined' && !window.edge) window.edge = bridge
+export const edge: EdgeApi = typeof window !== 'undefined' ? window.edge : bridge
