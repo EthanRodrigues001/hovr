@@ -40,7 +40,7 @@ export function PillShot() {
           </span>
         ))}
       </div>
-      <div className="absolute inset-x-14 top-[190px] grid grid-cols-3 gap-5">
+      <div className="absolute inset-x-14 top-[250px] grid grid-cols-3 gap-5">
         {CARDS.map(([id, name, left]) => (
           <div key={id} className="rounded-3xl border border-white/10 bg-black p-6">
             <ProviderLogo id={id} size={36} />
