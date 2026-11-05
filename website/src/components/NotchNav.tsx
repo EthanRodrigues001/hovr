@@ -30,11 +30,12 @@ function Flare({ side }: { side: 'l' | 'r' }) {
 export function NotchNav({ downloadUrl }: { downloadUrl: string }) {
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center">
+      <div aria-hidden className="absolute top-0 h-16 w-[min(760px,92vw)] bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,rgba(255,255,255,0.22),transparent_72%)] blur-md" />
       <motion.nav
         initial={{ y: -60, opacity: 0, scale: 0.9 }}
         animate={{ y: 0, opacity: 1, scale: 1 }}
         transition={{ type: 'spring', stiffness: 360, damping: 34, mass: 0.85, delay: 0.1 }}
-        className="pointer-events-auto relative flex h-[46px] max-w-[calc(100vw-40px)] items-center gap-1 rounded-b-[22px] bg-black pl-4 pr-2 text-white shadow-[0_18px_40px_-12px_rgba(0,0,0,0.9)]"
+        className="pointer-events-auto relative flex h-[46px] max-w-[calc(100vw-40px)] items-center gap-1 rounded-b-[22px] border border-t-0 border-white/20 bg-black pl-4 pr-2 text-white shadow-[0_0_40px_rgba(255,255,255,0.12),0_18px_40px_-12px_rgba(0,0,0,0.9)]"
         aria-label="Main"
       >
         <Flare side="l" />

@@ -134,3 +134,12 @@
   line-height: 1.45;
   user-select: none;
 }
+
+@keyframes phase {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}

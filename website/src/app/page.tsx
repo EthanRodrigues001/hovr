@@ -1,52 +1,66 @@
-import { BarChart3, Bell, Download, EyeOff, Gauge, Hourglass, Sparkles, TrendingDown } from 'lucide-react'
+import { ArrowUpRight, Download } from 'lucide-react'
 import { NotchNav } from '@/components/NotchNav'
-import { PaceMock, PillMock, ToolGrid } from '@/components/Mocks'
+import { Features } from '@/components/Features'
+import { ToolGrid } from '@/components/Mocks'
 import { Reveal } from '@/components/Reveal'
 import { NotchStage } from '@/components/Stage'
 import { getRelease } from '@/lib/release'
+import { REPO, SITE_URL } from '@/lib/site'
 
-const REPO = 'https://github.com/EthanRodrigues001/hovr'
 
 function Section({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="mx-auto w-full max-w-[1080px] scroll-mt-24 px-5 py-20 md:py-28">
+    <section id={id} className="mx-auto w-full max-w-[1080px] scroll-mt-24 px-5 py-12 md:py-16">
       <Reveal>
         <p className="mb-3 text-[13px] font-medium uppercase tracking-[0.14em] text-white/40">{eyebrow}</p>
         <h2 className="max-w-[720px] text-balance text-3xl font-semibold tracking-tight md:text-5xl">{title}</h2>
       </Reveal>
-      <div className="mt-12">{children}</div>
+      <div className="mt-8">{children}</div>
     </section>
-  )
-}
-
-function Card({ icon: Icon, title, children, wide }: { icon: typeof Gauge; title: string; children: React.ReactNode; wide?: boolean }) {
-  return (
-    <Reveal className={wide ? 'md:col-span-2' : ''}>
-      <div className="h-full rounded-[26px] border border-white/8 bg-white/[0.025] p-6 transition-colors hover:bg-white/[0.04]">
-        <div className="mb-4 flex size-9 items-center justify-center rounded-full bg-white/8">
-          <Icon size={17} />
-        </div>
-        <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
-        <div className="mt-2 text-[15px] leading-relaxed text-white/58">{children}</div>
-      </div>
-    </Reveal>
   )
 }
 
 export default async function Home() {
   const release = await getRelease()
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'HOVR',
+    url: SITE_URL,
+    description: 'Shows how much of your Claude Code, Codex, Cursor and other AI tool usage limits you have left, in a notch at the top of your Windows screen.',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Windows',
+    softwareVersion: release.version,
+    downloadUrl: release.url,
+    license: 'https://www.apache.org/licenses/LICENSE-2.0',
+    image: `${SITE_URL}/opengraph-image.png`,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    author: { '@type': 'Person', name: 'Ethan Rodrigues', url: 'https://github.com/EthanRodrigues001' }
+  }
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\u003c') }} />
       <NotchNav downloadUrl={release.url} />
       <main id="top">
         {/* hero */}
-        <section className="relative overflow-hidden px-5 pb-10 pt-36 text-center md:pt-44">
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[520px] bg-[radial-gradient(ellipse_60%_100%_at_50%_0%,rgba(255,255,255,0.09),transparent_70%)]" />
+        <section className="relative overflow-hidden px-5 pb-8 pt-32 text-center md:pt-40">
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[560px] [mask-image:linear-gradient(to_bottom,black,transparent)] bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:56px_56px]" />
+          <div aria-hidden className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[900px] -translate-x-1/2 bg-[radial-gradient(ellipse_50%_100%_at_50%_0%,rgba(255,255,255,0.16),transparent_70%)]" />
           <Reveal>
-            <p className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[13px] text-white/65">
-              <span className="size-1.5 rounded-full bg-[#4ade80]" />
-              Version {release.version} · free for Windows
-            </p>
+            <a
+              href={release.page}
+              className="group mx-auto mb-7 inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-black py-1.5 pl-1.5 pr-3.5 text-[13px] text-white/75 shadow-[0_0_30px_rgba(255,255,255,0.08)] transition-colors hover:border-white/30 hover:text-white"
+            >
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 font-semibold text-white">
+                <span className="relative flex size-1.5">
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#4ade80] opacity-70" />
+                  <span className="relative inline-flex size-1.5 rounded-full bg-[#4ade80]" />
+                </span>
+                v{release.version}
+              </span>
+              Free for Windows
+              <ArrowUpRight size={14} className="text-white/40 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white" />
+            </a>
             <h1 className="mx-auto max-w-[820px] text-balance text-4xl font-semibold leading-[1.05] tracking-tight md:text-7xl">
               Know what&apos;s left before your AI tools run dry.
             </h1>
@@ -78,35 +92,7 @@ export default async function Home() {
 
         {/* features */}
         <Section id="features" eyebrow="Features" title="Everything your tools hide behind a different screen, in one hover.">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card icon={Gauge} title="Pace, not just a number" wide>
-              <div className="grid items-center gap-6 md:grid-cols-2">
-                <p>
-                  A white marker on each bar shows where an even spend would be right now. You see you are burning too fast while there is still time to slow down, with a warning when a limit will run out before it resets.
-                </p>
-                <PaceMock />
-              </div>
-            </Card>
-            <Card icon={Sparkles} title="A pill that stays out of the way">
-              <p className="mb-5">The collapsed notch shows what is left on the limit you will hit first, as a small ring. It hides over fullscreen apps.</p>
-              <PillMock />
-            </Card>
-            <Card icon={EyeOff} title="Finds your tools by itself">
-              It reads the sign-in files your tools already keep, so there is no account, key or config to enter. Detected tools appear the moment they are signed in.
-            </Card>
-            <Card icon={TrendingDown} title="Forecast">
-              Which limits will run out before they reset, when, and how long they stay locked.
-            </Card>
-            <Card icon={BarChart3} title="Spend">
-              Tokens and estimated API cost per day and per model, read from your tools&apos; local session logs.
-            </Card>
-            <Card icon={Hourglass} title="Timeline">
-              Every limit window on one time axis, with the next window as a dashed bar and a &quot;resets by when&quot; summary.
-            </Card>
-            <Card icon={Bell} title="Alerts">
-              A Windows notification when a limit is nearly used up or will run out early. Each alert shows once per window.
-            </Card>
-          </div>
+          <Features />
         </Section>
 
         {/* tools */}
