@@ -82,8 +82,8 @@ function RealPanel() {
   }, [])
   if (!ready) return null
   return (
-    <div className="absolute left-1/2 top-[316px] h-[298px] w-[470px] -translate-x-1/2 overflow-hidden rounded-[26px] bg-black shadow-[0_30px_60px_-24px_rgba(0,0,0,0.45)]">
-      <div className="hovr-stage absolute left-0 top-0 origin-top-left" style={{ width: 600, height: 520, transform: 'scale(0.78)', background: '#000' }}>
+    <div className="absolute left-1/2 top-[326px] h-[304px] w-[560px] -translate-x-1/2 overflow-hidden rounded-t-[30px] bg-black ring-1 ring-black/10 shadow-[0_-24px_80px_-24px_rgba(0,0,0,0.4)]">
+      <div className="hovr-stage absolute left-0 top-0 origin-top-left" style={{ width: 600, height: 520, transform: 'scale(0.93)', background: '#000' }}>
         <div className="notch is-open" style={{ position: 'static', width: 600, transform: 'none', background: 'transparent', boxShadow: 'none', border: 0 }}>
           <div className="nbody" style={{ padding: '14px 16px' }}>
             <UsageView />
@@ -118,7 +118,10 @@ function V1() {
       </div>
       <RealPanel />
       <Brand className="absolute bottom-9 left-12" />
-      <Free className="absolute bottom-8 right-12" />
+      <div className="absolute bottom-[16px] right-12 flex flex-col items-center gap-2.5">
+        <Free />
+        <span className="text-[14px] font-medium text-black/45">Inspired by T3 Code</span>
+      </div>
     </Stage>
   )
 }
