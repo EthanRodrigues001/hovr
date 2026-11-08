@@ -47,10 +47,10 @@ function Brand({ size = 26, className = '' }: { size?: number; className?: strin
   )
 }
 
-function Free({ className = '' }: { className?: string }) {
+function Free({ className = '', compact }: { className?: string; compact?: boolean }) {
   return (
-    <span className={`flex items-center gap-2.5 rounded-full bg-black px-5 py-3 text-[18px] font-semibold text-white ${className}`}>
-      <WindowsIcon size={18} />
+    <span className={`flex items-center rounded-full bg-black font-semibold text-white ${compact ? 'gap-2 px-4 py-2 text-[15px]' : 'gap-2.5 px-5 py-3 text-[18px]'} ${className}`}>
+      <WindowsIcon size={compact ? 15 : 18} />
       Free for Windows
     </span>
   )
@@ -119,8 +119,8 @@ function V1() {
       <RealPanel />
       <Brand className="absolute bottom-9 left-12" />
       <div className="absolute bottom-[16px] right-12 flex flex-col items-center gap-2.5">
-        <Free />
-        <span className="text-[14px] font-medium text-black/45">Inspired by T3 Code</span>
+        <Free compact />
+        <span className="text-[13px] font-medium text-black/45">Inspired by T3 Code & Edge-Drop</span>
       </div>
     </Stage>
   )
