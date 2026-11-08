@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
-import { Notch as RealNotch } from '@/hovr/src/components/Notch'
+import { useEffect, useState } from 'react'
+import { UsageView } from '@/hovr/src/components/UsageView'
 import { useStore } from '@/hovr/src/store/appStore'
 
 import { Logo } from '@/hovr/src/components/Logo'
@@ -63,26 +63,33 @@ const Stage = ({ bg, children }: { bg: string; children: React.ReactNode }) => (
 )
 
 const TILES: Array<{ id: ProviderId; x: number; y: number; size: number; rot: number; blur: number; o: number; side: 'l' | 'r' }> = [
-  { id: 'claude', side: 'l', x: 52, y: 92, size: 118, rot: -9, blur: 0, o: 1 },
-  { id: 'grok', side: 'l', x: 138, y: 300, size: 84, rot: 11, blur: 2.5, o: 0.9 },
-  { id: 'cursor', side: 'l', x: 28, y: 430, size: 62, rot: -14, blur: 6, o: 0.7 },
-  { id: 'codex', side: 'r', x: 52, y: 92, size: 118, rot: 9, blur: 0, o: 1 },
-  { id: 'antigravity', side: 'r', x: 138, y: 300, size: 84, rot: -11, blur: 2.5, o: 0.9 },
-  { id: 'grok', side: 'r', x: 28, y: 430, size: 62, rot: 14, blur: 6, o: 0.7 }
+  { id: 'claude', side: 'l', x: 78, y: 70, size: 124, rot: -11, blur: 0, o: 1 },
+  { id: 'grok', side: 'l', x: 22, y: 236, size: 66, rot: 14, blur: 3, o: 0.85 },
+  { id: 'cursor', side: 'l', x: 176, y: 292, size: 92, rot: -6, blur: 1.5, o: 0.95 },
+  { id: 'antigravity', side: 'l', x: 60, y: 440, size: 58, rot: 9, blur: 5, o: 0.65 },
+  { id: 'codex', side: 'r', x: 36, y: 128, size: 138, rot: 8, blur: 0, o: 1 },
+  { id: 'cursor', side: 'r', x: 196, y: 54, size: 60, rot: -15, blur: 3.5, o: 0.8 },
+  { id: 'antigravity', side: 'r', x: 120, y: 330, size: 86, rot: -10, blur: 1.5, o: 0.95 },
+  { id: 'grok', side: 'r', x: 30, y: 452, size: 64, rot: 13, blur: 5, o: 0.65 }
 ]
 
-/** The real HOVR panel on sample data, scaled to sit at the bottom of the card. */
+/** The real usage cards (Claude Code and Codex) on sample data, without the drawer around them. */
 function RealPanel() {
+  const [ready, setReady] = useState(false)
   useEffect(() => {
-    void useStore.getState().hydrate().then(() => useStore.setState({ open: true, view: 'usage' }))
-    useStore.setState({ open: true, view: 'usage' })
+    void useStore.getState().hydrate()
+    setReady(true)
   }, [])
+  if (!ready) return null
   return (
-    <div className="absolute left-1/2 top-[320px] h-[310px] w-[476px] -translate-x-1/2 overflow-hidden">
-      <div className="hovr-stage absolute left-1/2 top-[-175px] origin-top" style={{ width: 1080, height: 770, transform: 'translateX(-50%) scale(0.74)' }}>
-        <RealNotch />
+    <div className="absolute left-1/2 top-[316px] h-[298px] w-[470px] -translate-x-1/2 overflow-hidden rounded-[26px] bg-black shadow-[0_30px_60px_-24px_rgba(0,0,0,0.45)]">
+      <div className="hovr-stage absolute left-0 top-0 origin-top-left" style={{ width: 600, height: 520, transform: 'scale(0.78)', background: '#000' }}>
+        <div className="notch is-open" style={{ position: 'static', width: 600, transform: 'none', background: 'transparent', boxShadow: 'none', border: 0 }}>
+          <div className="nbody" style={{ padding: '14px 16px' }}>
+            <UsageView />
+          </div>
+        </div>
       </div>
-      <div aria-hidden className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#fcf4fa] via-[#fcf4fa]/70 to-transparent" />
     </div>
   )
 }
