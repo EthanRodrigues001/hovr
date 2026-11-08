@@ -79,7 +79,7 @@ function RealPanel() {
   }, [])
   return (
     <div className="absolute left-1/2 top-[320px] h-[310px] w-[476px] -translate-x-1/2 overflow-hidden">
-      <div className="hovr-stage absolute left-1/2 top-0 origin-top" style={{ width: 1080, height: 770, transform: 'translateX(-50%) scale(0.74)' }}>
+      <div className="hovr-stage absolute left-1/2 top-[-175px] origin-top" style={{ width: 1080, height: 770, transform: 'translateX(-50%) scale(0.74)' }}>
         <RealNotch />
       </div>
       <div aria-hidden className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#fcf4fa] via-[#fcf4fa]/70 to-transparent" />
@@ -101,7 +101,8 @@ function V1() {
           <ProviderLogo id={t.id} size={t.size * 0.5} />
         </span>
       ))}
-      <div className="absolute inset-x-0 top-[70px] px-16 text-center">
+      <Notch chips={[['claude', 27], ['codex', 48], ['antigravity', 100]]} h={92} ring={44} text={34} gap={32} px={46} flare={20} />
+      <div className="absolute inset-x-0 top-[122px] px-16 text-center">
         <h1 className="text-[84px] font-extrabold leading-[1.02] tracking-tighter">
           A Dynamic Island
           <br />
