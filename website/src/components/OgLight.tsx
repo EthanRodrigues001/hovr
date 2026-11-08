@@ -1,5 +1,9 @@
 'use client'
 
+import { useEffect } from 'react'
+import { Notch as RealNotch } from '@/hovr/src/components/Notch'
+import { useStore } from '@/hovr/src/store/appStore'
+
 import { Logo } from '@/hovr/src/components/Logo'
 import { ProviderLogo } from '@/hovr/src/components/ProviderLogo'
 import { ProviderRing } from '@/hovr/src/components/ProviderRing'
@@ -58,53 +62,56 @@ const Stage = ({ bg, children }: { bg: string; children: React.ReactNode }) => (
   </div>
 )
 
-/** 1. Notch over a soft gradient, one short headline, stacked tool logos. */
+const TILES: Array<{ id: ProviderId; x: number; y: number; size: number; rot: number; blur: number; o: number; side: 'l' | 'r' }> = [
+  { id: 'claude', side: 'l', x: 52, y: 92, size: 118, rot: -9, blur: 0, o: 1 },
+  { id: 'grok', side: 'l', x: 138, y: 300, size: 84, rot: 11, blur: 2.5, o: 0.9 },
+  { id: 'cursor', side: 'l', x: 28, y: 430, size: 62, rot: -14, blur: 6, o: 0.7 },
+  { id: 'codex', side: 'r', x: 52, y: 92, size: 118, rot: 9, blur: 0, o: 1 },
+  { id: 'antigravity', side: 'r', x: 138, y: 300, size: 84, rot: -11, blur: 2.5, o: 0.9 },
+  { id: 'grok', side: 'r', x: 28, y: 430, size: 62, rot: 14, blur: 6, o: 0.7 }
+]
+
+/** The real HOVR panel on sample data, scaled to sit at the bottom of the card. */
+function RealPanel() {
+  useEffect(() => {
+    void useStore.getState().hydrate().then(() => useStore.setState({ open: true, view: 'usage' }))
+    useStore.setState({ open: true, view: 'usage' })
+  }, [])
+  return (
+    <div className="absolute left-1/2 top-[320px] h-[310px] w-[476px] -translate-x-1/2 overflow-hidden">
+      <div className="hovr-stage absolute left-1/2 top-0 origin-top" style={{ width: 1080, height: 770, transform: 'translateX(-50%) scale(0.74)' }}>
+        <RealNotch />
+      </div>
+      <div aria-hidden className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#fcf4fa] via-[#fcf4fa]/70 to-transparent" />
+    </div>
+  )
+}
+
+/** 1. Real panel under one short headline, tilted tool tiles that blur with distance. */
 function V1() {
-  const tools: ProviderId[] = ['claude', 'codex', 'cursor', 'antigravity', 'grok']
   return (
     <Stage bg="linear-gradient(135deg,#eef2ff 0%,#fdf2f8 55%,#fff7ed 100%)">
       <div aria-hidden className="absolute left-1/2 top-[-140px] h-[360px] w-[700px] -translate-x-1/2 rounded-full bg-white/70 blur-3xl" />
-      <Notch chips={[['claude', 27], ['codex', 48], ['antigravity', 100]]} h={92} ring={44} text={34} gap={32} px={46} flare={20} />
-      <div className="absolute inset-x-0 top-[210px] px-16 text-center">
+      {TILES.map((t, i) => (
+        <span
+          key={i}
+          className="absolute flex items-center justify-center bg-black shadow-[0_26px_44px_-18px_rgba(0,0,0,0.5)]"
+          style={{ [t.side === 'l' ? 'left' : 'right']: t.x, top: t.y, width: t.size, height: t.size, borderRadius: t.size * 0.26, transform: `rotate(${t.rot}deg)`, filter: t.blur ? `blur(${t.blur}px)` : undefined, opacity: t.o }}
+        >
+          <ProviderLogo id={t.id} size={t.size * 0.5} />
+        </span>
+      ))}
+      <div className="absolute inset-x-0 top-[70px] px-16 text-center">
         <h1 className="text-[84px] font-extrabold leading-[1.02] tracking-tighter">
           A Dynamic Island
           <br />
           for your AI limits.
         </h1>
       </div>
-      <div className="absolute inset-x-0 bottom-[96px] flex justify-center">
-        <div className="flex items-center">
-          {tools.map((id, i) => (
-            <span key={id} className="flex size-[64px] items-center justify-center rounded-full bg-black ring-[5px] ring-[#fdf4f6]" style={{ marginLeft: i ? -14 : 0, zIndex: tools.length - i }}>
-              <ProviderLogo id={id} size={30} />
-            </span>
-          ))}
-        </div>
-      </div>
-      <SideCard id="claude" name="Claude Code" left={27} note="resets in 2h 59m" className="left-[-8px] top-[150px] -rotate-[7deg]" />
-      <SideCard id="grok" name="Grok" left={85} note="resets in 6d" className="left-[-4px] top-[362px] rotate-[4deg]" small />
-      <SideCard id="codex" name="Codex" left={48} note="resets in 4d 2h" className="right-[-8px] top-[150px] rotate-[7deg]" />
-      <SideCard id="cursor" name="Cursor" left={62} note="resets in 11d" className="right-[-4px] top-[362px] -rotate-[4deg]" small />
+      <RealPanel />
       <Brand className="absolute bottom-9 left-12" />
       <Free className="absolute bottom-8 right-12" />
     </Stage>
-  )
-}
-
-function SideCard({ id, name, left, note, className = '', small }: { id: ProviderId; name: string; left: number; note: string; className?: string; small?: boolean }) {
-  const low = left < 30
-  return (
-    <div className={`absolute ${small ? 'w-[210px] opacity-80' : 'w-[250px]'} rounded-[24px] bg-black p-5 text-white shadow-[0_28px_50px_-20px_rgba(0,0,0,0.45)] ${className}`}>
-      <div className="flex items-center gap-2.5 text-[17px] font-medium text-white/65">
-        <ProviderLogo id={id} size={22} />
-        {name}
-      </div>
-      <p className={`mt-3 font-bold leading-none ${small ? 'text-[44px]' : 'text-[56px]'} ${low ? 'text-[#f87171]' : 'text-white'}`}>{left}%</p>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/15">
-        <div className={`h-full rounded-full ${low ? 'bg-[#f87171]' : 'bg-white'}`} style={{ width: `${left}%` }} />
-      </div>
-      <p className="mt-2.5 text-[14px] text-white/50">{note}</p>
-    </div>
   )
 }
 
