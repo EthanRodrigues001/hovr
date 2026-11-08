@@ -117,7 +117,7 @@ function V1() {
         </h1>
       </div>
       <RealPanel />
-      <Brand className="absolute bottom-9 left-12" />
+      <Brand size={38} className="absolute bottom-8 left-12" />
       <div className="absolute bottom-[16px] right-12 flex flex-col items-center gap-2.5">
         <Free compact />
         <span className="text-[13px] font-medium text-black/45">Inspired by T3 Code & Edge-Drop</span>
