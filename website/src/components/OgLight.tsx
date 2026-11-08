@@ -81,9 +81,30 @@ function V1() {
           ))}
         </div>
       </div>
+      <SideCard id="claude" name="Claude Code" left={27} note="resets in 2h 59m" className="left-[-8px] top-[150px] -rotate-[7deg]" />
+      <SideCard id="grok" name="Grok" left={85} note="resets in 6d" className="left-[-4px] top-[362px] rotate-[4deg]" small />
+      <SideCard id="codex" name="Codex" left={48} note="resets in 4d 2h" className="right-[-8px] top-[150px] rotate-[7deg]" />
+      <SideCard id="cursor" name="Cursor" left={62} note="resets in 11d" className="right-[-4px] top-[362px] -rotate-[4deg]" small />
       <Brand className="absolute bottom-9 left-12" />
       <Free className="absolute bottom-8 right-12" />
     </Stage>
+  )
+}
+
+function SideCard({ id, name, left, note, className = '', small }: { id: ProviderId; name: string; left: number; note: string; className?: string; small?: boolean }) {
+  const low = left < 30
+  return (
+    <div className={`absolute ${small ? 'w-[210px] opacity-80' : 'w-[250px]'} rounded-[24px] bg-black p-5 text-white shadow-[0_28px_50px_-20px_rgba(0,0,0,0.45)] ${className}`}>
+      <div className="flex items-center gap-2.5 text-[17px] font-medium text-white/65">
+        <ProviderLogo id={id} size={22} />
+        {name}
+      </div>
+      <p className={`mt-3 font-bold leading-none ${small ? 'text-[44px]' : 'text-[56px]'} ${low ? 'text-[#f87171]' : 'text-white'}`}>{left}%</p>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/15">
+        <div className={`h-full rounded-full ${low ? 'bg-[#f87171]' : 'bg-white'}`} style={{ width: `${left}%` }} />
+      </div>
+      <p className="mt-2.5 text-[14px] text-white/50">{note}</p>
+    </div>
   )
 }
 
