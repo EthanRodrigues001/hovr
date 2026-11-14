@@ -1,0 +1,17 @@
+# HOVR
+
+> HOVR is a free, open source Windows app: a small notch at the top of the screen that shows how much of your AI coding tools' usage limits are left, when each limit resets, and which one runs out first.
+
+HOVR reads the sign-in files that Claude Code, Codex, Cursor, Antigravity and Grok already keep on your PC, so there is no account or key to enter. Hover the notch to see every limit. The Forecast, Spend and Timeline views show projected run-out times, spend and history.
+
+- Platform: Windows (x64)
+- Price: free
+- License: Apache-2.0
+- Latest version: 1.0.4
+- Author: Ethan Rodrigues
+
+## Links
+
+- [Website](https://hovr-ten.vercel.app): overview, features, install steps and privacy notes
+- [Download the Windows installer](https://github.com/EthanRodrigues001/hovr/releases/latest): HOVR-Setup installer and release notes
+- [Source code and README](https://github.com/EthanRodrigues001/hovr): features, supported tools, privacy and how to build it
