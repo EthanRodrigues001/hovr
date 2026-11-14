@@ -1,7 +1,11 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
+import Script from 'next/script'
 import { SITE_URL } from '@/lib/site'
 import './globals.css'
+
+// Google Analytics 4 measurement ID for the website (not the app). Only loaded in production builds.
+const GA_ID = 'G-TGR11QVRX4'
 
 const inter = Inter({ variable: '--font-inter', subsets: ['latin'], display: 'swap' })
 
@@ -73,7 +77,17 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} dark`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        {process.env.NODE_ENV === 'production' && (
+          <>
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
+            <Script id="ga4" strategy="afterInteractive">
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${GA_ID}');`}
+            </Script>
+          </>
+        )}
+      </body>
     </html>
   )
 }

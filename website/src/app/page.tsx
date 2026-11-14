@@ -162,7 +162,7 @@ export default async function Home() {
             <div className="grid gap-3 sm:grid-cols-2">
               {[
                 ['Read-only', 'HOVR reads the sign-in files your tools already keep and asks each tool’s own service for your usage. It never changes them.'],
-                ['No telemetry', 'No analytics, no tracking. Your usage goes nowhere except the service it belongs to.'],
+                ['No telemetry', 'The app has no analytics and no tracking. Your usage goes nowhere except the service it belongs to. This website counts visits with Google Analytics.'],
                 ['No silent renewals', 'An expired sign-in is never renewed for you: HOVR asks you to open that tool once. Antigravity is the exception, using a short-lived token kept only in memory.'],
                 ['Two other calls', 'An update check against GitHub, and an optional daily download of a public price list for cost estimates.']
               ].map(([t, d], i) => (
